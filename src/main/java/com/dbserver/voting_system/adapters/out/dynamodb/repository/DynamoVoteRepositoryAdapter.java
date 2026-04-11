@@ -8,14 +8,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
+
+    private final VoteDynamoMapper voteDynamoMapper;
 
     @Override
     public void save(Vote vote) {
-        VoteItem item = VoteDynamoMapper.toItem(vote);
+        VoteItem item = voteDynamoMapper.toItem(vote);
         InMemoryDynamoTables.VOTE_TABLE
                 .computeIfAbsent(vote.getAgendaId(), key -> new ConcurrentHashMap<>())
                 .put(vote.getAssociateId(), item);
@@ -35,7 +39,7 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
         }
 
         return voteItems.values().stream()
-                .map(VoteDynamoMapper::toDomain)
+                .map(voteDynamoMapper::toDomain)
                 .sorted(Comparator.comparing(Vote::getVotedAt))
                 .toList();
     }

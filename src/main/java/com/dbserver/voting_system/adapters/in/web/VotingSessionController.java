@@ -4,6 +4,7 @@ import com.dbserver.voting_system.adapters.in.web.dto.OpenVotingSessionRequest;
 import com.dbserver.voting_system.application.dto.request.OpenVotingSessionCommand;
 import com.dbserver.voting_system.application.dto.response.VotingSessionResponse;
 import com.dbserver.voting_system.application.port.in.OpenVotingSessionUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,13 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/agendas")
+@RequiredArgsConstructor
 public class VotingSessionController {
 
     private final OpenVotingSessionUseCase openVotingSessionUseCase;
-
-    public VotingSessionController(OpenVotingSessionUseCase openVotingSessionUseCase) {
-        this.openVotingSessionUseCase = openVotingSessionUseCase;
-    }
 
     @PostMapping("/{agendaId}/sessions")
     @ResponseStatus(HttpStatus.CREATED)

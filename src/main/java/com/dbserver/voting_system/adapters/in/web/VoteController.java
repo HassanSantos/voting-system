@@ -7,6 +7,7 @@ import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,15 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/agendas")
+@RequiredArgsConstructor
 public class VoteController {
 
     private final RegisterVoteUseCase registerVoteUseCase;
     private final GetVotesByAgendaUseCase getVotesByAgendaUseCase;
-
-    public VoteController(RegisterVoteUseCase registerVoteUseCase, GetVotesByAgendaUseCase getVotesByAgendaUseCase) {
-        this.registerVoteUseCase = registerVoteUseCase;
-        this.getVotesByAgendaUseCase = getVotesByAgendaUseCase;
-    }
 
     @PostMapping("/{agendaId}/votes")
     @ResponseStatus(HttpStatus.CREATED)

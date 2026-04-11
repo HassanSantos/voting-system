@@ -5,14 +5,18 @@ import com.dbserver.voting_system.adapters.out.dynamodb.mapper.AgendaDynamoMappe
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.domain.model.Agenda;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class DynamoAgendaRepositoryAdapter implements AgendaRepositoryPort {
+
+    private final AgendaDynamoMapper agendaDynamoMapper;
 
     @Override
     public Agenda save(Agenda agenda) {
-        AgendaItem item = AgendaDynamoMapper.toItem(agenda);
+        AgendaItem item = agendaDynamoMapper.toItem(agenda);
         InMemoryDynamoTables.AGENDA_TABLE.put(item.id(), item);
         return agenda;
     }
@@ -20,6 +24,6 @@ public class DynamoAgendaRepositoryAdapter implements AgendaRepositoryPort {
     @Override
     public Optional<Agenda> findById(String id) {
         return Optional.ofNullable(InMemoryDynamoTables.AGENDA_TABLE.get(id))
-                .map(AgendaDynamoMapper::toDomain);
+                .map(agendaDynamoMapper::toDomain);
     }
 }

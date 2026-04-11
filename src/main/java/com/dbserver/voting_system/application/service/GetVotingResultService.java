@@ -10,25 +10,15 @@ import com.dbserver.voting_system.domain.model.Vote;
 import com.dbserver.voting_system.domain.model.VotingResult;
 import com.dbserver.voting_system.domain.service.VotingResultCalculator;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class GetVotingResultService implements GetVotingResultUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
     private final VotingResultRepositoryPort votingResultRepositoryPort;
     private final VotingResultCalculator votingResultCalculator;
-
-    public GetVotingResultService(
-            AgendaRepositoryPort agendaRepositoryPort,
-            VoteRepositoryPort voteRepositoryPort,
-            VotingResultRepositoryPort votingResultRepositoryPort,
-            VotingResultCalculator votingResultCalculator
-    ) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.voteRepositoryPort = voteRepositoryPort;
-        this.votingResultRepositoryPort = votingResultRepositoryPort;
-        this.votingResultCalculator = votingResultCalculator;
-    }
 
     @Override
     public VotingResultResponse execute(String agendaId) {

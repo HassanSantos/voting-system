@@ -11,7 +11,9 @@ import com.dbserver.voting_system.domain.exception.VotingSessionAlreadyOpenExcep
 import com.dbserver.voting_system.domain.model.VotingSession;
 import java.time.Clock;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class OpenVotingSessionService implements OpenVotingSessionUseCase {
 
     private static final long DEFAULT_DURATION_MINUTES = 1L;
@@ -20,22 +22,13 @@ public class OpenVotingSessionService implements OpenVotingSessionUseCase {
     private final VotingSessionRepositoryPort votingSessionRepositoryPort;
     private final Clock clock;
 
-    public OpenVotingSessionService(
-            AgendaRepositoryPort agendaRepositoryPort,
-            VotingSessionRepositoryPort votingSessionRepositoryPort,
-            Clock clock
-    ) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.votingSessionRepositoryPort = votingSessionRepositoryPort;
-        this.clock = clock;
-    }
-
     @Override
     public VotingSessionResponse execute(OpenVotingSessionCommand command) {
         agendaRepositoryPort.findById(command.agendaId())
                 .orElseThrow(() -> new AgendaNotFoundException(command.agendaId()));
 
-        VotingSession existingSession = votingSessionRepositoryPort.findByAgendaId(command.agendaId()).orElse(null);
+        VotingSession existingSession = votingSessionRepositoryPort
+                .findByAgendaId(command.agendaId()).orElse(null);
         if (existingSession != null && existingSession.isOpen(Instant.now(clock))) {
             throw new VotingSessionAlreadyOpenException(command.agendaId());
         }
@@ -58,7 +51,8 @@ public class OpenVotingSessionService implements OpenVotingSessionUseCase {
                 savedSession.getAgendaId(),
                 savedSession.getOpenedAt(),
                 savedSession.getEndsAt(),
-                savedSession.getStatus().name()
+                savedSession.getStatus()
+                        .name()
         );
     }
 }

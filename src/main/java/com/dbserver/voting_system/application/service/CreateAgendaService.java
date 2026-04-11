@@ -8,16 +8,13 @@ import com.dbserver.voting_system.domain.model.Agenda;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class CreateAgendaService implements CreateAgendaUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final Clock clock;
-
-    public CreateAgendaService(AgendaRepositoryPort agendaRepositoryPort, Clock clock) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.clock = clock;
-    }
 
     @Override
     public AgendaResponse execute(CreateAgendaCommand command) {

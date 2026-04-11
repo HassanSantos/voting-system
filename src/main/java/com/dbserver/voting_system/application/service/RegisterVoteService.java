@@ -14,25 +14,15 @@ import com.dbserver.voting_system.domain.model.Vote;
 import com.dbserver.voting_system.domain.model.VotingSession;
 import java.time.Clock;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class RegisterVoteService implements RegisterVoteUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VotingSessionRepositoryPort votingSessionRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
     private final Clock clock;
-
-    public RegisterVoteService(
-            AgendaRepositoryPort agendaRepositoryPort,
-            VotingSessionRepositoryPort votingSessionRepositoryPort,
-            VoteRepositoryPort voteRepositoryPort,
-            Clock clock
-    ) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.votingSessionRepositoryPort = votingSessionRepositoryPort;
-        this.voteRepositoryPort = voteRepositoryPort;
-        this.clock = clock;
-    }
 
     @Override
     public VoteResponse execute(RegisterVoteCommand command) {

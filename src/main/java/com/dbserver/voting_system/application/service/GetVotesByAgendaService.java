@@ -7,16 +7,13 @@ import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
 import com.dbserver.voting_system.domain.model.Vote;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class GetVotesByAgendaService implements GetVotesByAgendaUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
-
-    public GetVotesByAgendaService(AgendaRepositoryPort agendaRepositoryPort, VoteRepositoryPort voteRepositoryPort) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.voteRepositoryPort = voteRepositoryPort;
-    }
 
     @Override
     public List<VoteResponse> execute(String agendaId) {
