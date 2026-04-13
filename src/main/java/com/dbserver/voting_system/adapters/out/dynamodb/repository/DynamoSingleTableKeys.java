@@ -2,6 +2,7 @@ package com.dbserver.voting_system.adapters.out.dynamodb.repository;
 
 final class DynamoSingleTableKeys {
 
+    static final String TABLE_NAME = "voting-system";
     static final String PK = "pk";
     static final String SK = "sk";
     static final String ENTITY_TYPE = "entityType";

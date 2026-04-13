@@ -8,7 +8,6 @@ import static com.dbserver.voting_system.adapters.out.dynamodb.repository.Dynamo
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VotingResultItem;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VotingResultDynamoMapper;
 import com.dbserver.voting_system.application.port.out.VotingResultRepositoryPort;
-import com.dbserver.voting_system.config.DynamoDbProperties;
 import com.dbserver.voting_system.domain.model.VotingResult;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +23,6 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 public class DynamoVotingResultRepositoryAdapter implements VotingResultRepositoryPort {
 
     private final DynamoDbClient dynamoDbClient;
-    private final DynamoDbProperties dynamoDbProperties;
     private final VotingResultDynamoMapper votingResultDynamoMapper;
 
     @Override
@@ -42,7 +40,7 @@ public class DynamoVotingResultRepositoryAdapter implements VotingResultReposito
         attributes.put("outcome", AttributeValue.builder().s(item.outcome()).build());
 
         PutItemRequest request = PutItemRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
+                .tableName(DynamoSingleTableKeys.TABLE_NAME)
                 .item(attributes)
                 .build();
 
@@ -53,7 +51,7 @@ public class DynamoVotingResultRepositoryAdapter implements VotingResultReposito
     public Optional<VotingResult> findByAgendaId(String agendaId) {
         Optional<Map<String, AttributeValue>> maybeItem = DynamoGetItemHelper.findByPrimaryKey(
                 dynamoDbClient,
-                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.TABLE_NAME,
                 DynamoSingleTableKeys.agendaPk(agendaId),
                 RESULT_SK
         );

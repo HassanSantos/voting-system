@@ -8,7 +8,6 @@ import static com.dbserver.voting_system.adapters.out.dynamodb.repository.Dynamo
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VoteItem;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VoteDynamoMapper;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
-import com.dbserver.voting_system.config.DynamoDbProperties;
 import com.dbserver.voting_system.domain.model.Vote;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
 
     private final DynamoDbClient dynamoDbClient;
-    private final DynamoDbProperties dynamoDbProperties;
     private final VoteDynamoMapper voteDynamoMapper;
 
     @Override
@@ -50,7 +48,7 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
         attributes.put("gsi1sk", AttributeValue.builder().s("AGENDA#" + item.agendaId() + "#" + item.votedAt()).build());
 
         PutItemRequest request = PutItemRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
+                .tableName(DynamoSingleTableKeys.TABLE_NAME)
                 .item(attributes)
                 .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
                 .build();
@@ -65,7 +63,7 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
         expressionValues.put(":entityType", AttributeValue.builder().s("VOTE").build());
 
         ScanRequest.Builder requestBuilder = ScanRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
+                .tableName(DynamoSingleTableKeys.TABLE_NAME)
                 .filterExpression("entityType = :entityType")
                 .expressionAttributeValues(expressionValues)
                 .consistentRead(true);
@@ -90,7 +88,7 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
     public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
         return DynamoGetItemHelper.existsByPrimaryKey(
                 dynamoDbClient,
-                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.TABLE_NAME,
                 DynamoSingleTableKeys.agendaPk(agendaId),
                 DynamoSingleTableKeys.voteSk(associateId),
                 PK
@@ -106,7 +104,7 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
         expressionValues.put(":skPrefix", AttributeValue.builder().s(VOTE_SK_PREFIX).build());
 
         QueryRequest.Builder requestBuilder = QueryRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
+                .tableName(DynamoSingleTableKeys.TABLE_NAME)
                 .keyConditionExpression("pk = :pk AND begins_with(sk, :skPrefix)")
                 .expressionAttributeValues(expressionValues)
                 .consistentRead(true);

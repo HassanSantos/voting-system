@@ -8,7 +8,6 @@ import static com.dbserver.voting_system.adapters.out.dynamodb.repository.Dynamo
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.AgendaItem;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.AgendaDynamoMapper;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
-import com.dbserver.voting_system.config.DynamoDbProperties;
 import com.dbserver.voting_system.domain.model.Agenda;
 import java.time.Instant;
 import java.util.HashMap;
@@ -25,7 +24,6 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 public class DynamoAgendaRepositoryAdapter implements AgendaRepositoryPort {
 
     private final DynamoDbClient dynamoDbClient;
-    private final DynamoDbProperties dynamoDbProperties;
     private final AgendaDynamoMapper agendaDynamoMapper;
 
     @Override
@@ -45,7 +43,7 @@ public class DynamoAgendaRepositoryAdapter implements AgendaRepositoryPort {
         }
 
         PutItemRequest request = PutItemRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
+                .tableName(DynamoSingleTableKeys.TABLE_NAME)
                 .item(attributes)
                 .build();
 
@@ -58,7 +56,7 @@ public class DynamoAgendaRepositoryAdapter implements AgendaRepositoryPort {
     public Optional<Agenda> findById(String id) {
         Optional<Map<String, AttributeValue>> maybeItem = DynamoGetItemHelper.findByPrimaryKey(
                 dynamoDbClient,
-                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.TABLE_NAME,
                 DynamoSingleTableKeys.agendaPk(id),
                 AGENDA_META_SK
         );

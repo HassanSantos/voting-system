@@ -1,11 +1,12 @@
 services:
   localstack:
-    image: localstack/localstack:3.8
+    image:   localstack/localstack-pro
     container_name: voting-system-localstack
     ports:
       - "4566:4566"
     environment:
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - LOCALSTACK_AUTH_TOKEN=ls-lureXAcE-RUlU-cegi-5564-3468XUsi1a20
+      - AWS_ENDPOINT=http://localstack:4566
       - SERVICES=dynamodb
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
