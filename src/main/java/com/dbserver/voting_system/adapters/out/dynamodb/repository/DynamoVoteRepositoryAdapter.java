@@ -20,10 +20,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
 @Repository
 @RequiredArgsConstructor
@@ -53,26 +54,47 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
                 .item(attributes)
                 .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
                 .build();
-
         dynamoDbClient.putItem(request);
     }
 
     @Override
-    public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
-        Map<String, AttributeValue> key = Map.of(
-                PK, AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(agendaId)).build(),
-                SK, AttributeValue.builder().s(DynamoSingleTableKeys.voteSk(associateId)).build()
-        );
+    public List<Vote> findAll() {
+        List<Map<String, AttributeValue>> rows = new ArrayList<>();
 
-        GetItemRequest request = GetItemRequest.builder()
+        Map<String, AttributeValue> expressionValues = new HashMap<>();
+        expressionValues.put(":entityType", AttributeValue.builder().s("VOTE").build());
+
+        ScanRequest.Builder requestBuilder = ScanRequest.builder()
                 .tableName(dynamoDbProperties.getTableName())
-                .key(key)
-                .consistentRead(true)
-                .projectionExpression(PK)
-                .build();
+                .filterExpression("entityType = :entityType")
+                .expressionAttributeValues(expressionValues)
+                .consistentRead(true);
 
-        Map<String, AttributeValue> item = dynamoDbClient.getItem(request).item();
-        return item != null && !item.isEmpty();
+        Map<String, AttributeValue> lastEvaluatedKey = null;
+
+        do {
+            ScanRequest request = requestBuilder.exclusiveStartKey(lastEvaluatedKey).build();
+            ScanResponse response = dynamoDbClient.scan(request);
+            rows.addAll(response.items());
+            lastEvaluatedKey = response.lastEvaluatedKey();
+        } while (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty());
+
+        return rows.stream()
+                .map(this::toVoteItem)
+                .map(voteDynamoMapper::toDomain)
+                .sorted(Comparator.comparing(Vote::getVotedAt))
+                .toList();
+    }
+
+    @Override
+    public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
+        return DynamoGetItemHelper.existsByPrimaryKey(
+                dynamoDbClient,
+                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.agendaPk(agendaId),
+                DynamoSingleTableKeys.voteSk(associateId),
+                PK
+        );
     }
 
     @Override

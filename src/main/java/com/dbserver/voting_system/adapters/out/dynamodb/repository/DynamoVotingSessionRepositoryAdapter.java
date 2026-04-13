@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 @Repository
@@ -53,21 +52,17 @@ public class DynamoVotingSessionRepositoryAdapter implements VotingSessionReposi
 
     @Override
     public Optional<VotingSession> findByAgendaId(String agendaId) {
-        Map<String, AttributeValue> key = Map.of(
-                PK, AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(agendaId)).build(),
-                SK, AttributeValue.builder().s(SESSION_SK).build()
+        Optional<Map<String, AttributeValue>> maybeItem = DynamoGetItemHelper.findByPrimaryKey(
+                dynamoDbClient,
+                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.agendaPk(agendaId),
+                SESSION_SK
         );
-
-        GetItemRequest request = GetItemRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
-                .key(key)
-                .consistentRead(true)
-                .build();
-
-        Map<String, AttributeValue> item = dynamoDbClient.getItem(request).item();
-        if (item == null || item.isEmpty()) {
+        if (maybeItem.isEmpty()) {
             return Optional.empty();
         }
+
+        Map<String, AttributeValue> item = maybeItem.get();
 
         VotingSessionItem sessionItem = new VotingSessionItem(
                 item.get("agendaId").s(),

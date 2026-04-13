@@ -11,7 +11,13 @@ This project is a backend service built with:
 - JPA / PostgreSQL
 - REST APIs
 
-The goal of this project is to keep business rules isolated from frameworks and infrastructure concerns, ensuring maintainability, testability, and low coupling.
+- The goal of this project is to keep business rules isolated from frameworks and infrastructure concerns, ensuring maintainability, testability, and low coupling.
+  S.O.L.I.D: The 5 principles of OOP
+  S — Single Responsibility Principle
+  O — Open-Closed Principle
+  L — Liskov Substitution Principle
+  I — Interface Segregation Principle
+  D — Dependency Inversion Principle
 
 ---
 

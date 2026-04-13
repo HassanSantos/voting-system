@@ -1,6 +1,7 @@
 package com.dbserver.voting_system.config;
 
 import com.dbserver.voting_system.application.port.in.CreateAgendaUseCase;
+import com.dbserver.voting_system.application.port.in.GetAllVotesUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotingResultUseCase;
 import com.dbserver.voting_system.application.port.in.OpenVotingSessionUseCase;
@@ -10,6 +11,7 @@ import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingResultRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.application.service.CreateAgendaService;
+import com.dbserver.voting_system.application.service.GetAllVotesService;
 import com.dbserver.voting_system.application.service.GetVotesByAgendaService;
 import com.dbserver.voting_system.application.service.GetVotingResultService;
 import com.dbserver.voting_system.application.service.OpenVotingSessionService;
@@ -77,5 +79,10 @@ public class BeanConfig {
             VoteRepositoryPort voteRepositoryPort
     ) {
         return new GetVotesByAgendaService(agendaRepositoryPort, voteRepositoryPort);
+    }
+
+    @Bean
+    GetAllVotesUseCase getAllVotesUseCase(VoteRepositoryPort voteRepositoryPort) {
+        return new GetAllVotesService(voteRepositoryPort);
     }
 }

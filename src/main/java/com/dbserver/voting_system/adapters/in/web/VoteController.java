@@ -3,6 +3,7 @@ package com.dbserver.voting_system.adapters.in.web;
 import com.dbserver.voting_system.adapters.in.web.dto.RegisterVoteRequest;
 import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
+import com.dbserver.voting_system.application.port.in.GetAllVotesUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.domain.enums.VoteValue;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class VoteController {
 
     private final RegisterVoteUseCase registerVoteUseCase;
+    private final GetAllVotesUseCase getAllVotesUseCase;
     private final GetVotesByAgendaUseCase getVotesByAgendaUseCase;
 
     @PostMapping("/{agendaId}/votes")
@@ -40,5 +42,10 @@ public class VoteController {
     @GetMapping("/{agendaId}/votes")
     public List<VoteResponse> listVotes(@PathVariable String agendaId) {
         return getVotesByAgendaUseCase.execute(agendaId);
+    }
+
+    @GetMapping("/votes")
+    public List<VoteResponse> listAllVotes() {
+        return getAllVotesUseCase.execute();
     }
 }

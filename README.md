@@ -24,6 +24,24 @@ Because of this, the app needs a concrete Spring bean implementation for `Create
 ./mvnw spring-boot:run
 ```
 
+## Local Infrastructure (Docker)
+Start LocalStack and SonarQube locally:
+
+```bash
+export LOCALSTACK_AUTH_TOKEN='your_token_here'
+docker compose up -d
+```
+
+Services:
+- LocalStack: `http://localhost:4566`
+- SonarQube: `http://localhost:9000`
+
+Stop all containers:
+
+```bash
+docker compose down
+```
+
 ## Test
 ```bash
 ./mvnw test
@@ -52,6 +70,21 @@ Response:
 After starting the app:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+## SonarQube Analysis
+1. Open SonarQube at `http://localhost:9000` and sign in (`admin` / `admin` on first start).
+2. Create a user token in **My Account > Security**.
+3. Run analysis with Maven:
+
+```bash
+./mvnw clean verify sonar:sonar -Dsonar.token=YOUR_SONAR_TOKEN
+```
+
+Optional (if needed):
+
+```bash
+./mvnw sonar:sonar -Dsonar.token=YOUR_SONAR_TOKEN -Dsonar.host.url=http://localhost:9000
+```
 
 ## Project Structure
 - `src/main/java/com/dbserver/voting_system/application/domain/model`: domain models

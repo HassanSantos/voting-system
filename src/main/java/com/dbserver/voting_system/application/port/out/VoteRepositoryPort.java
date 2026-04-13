@@ -7,6 +7,8 @@ public interface VoteRepositoryPort {
 
     void save(Vote vote);
 
+    List<Vote> findAll();
+
     boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId);
 
     List<Vote> findByAgendaId(String agendaId);

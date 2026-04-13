@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 @Repository
@@ -52,21 +51,17 @@ public class DynamoVotingResultRepositoryAdapter implements VotingResultReposito
 
     @Override
     public Optional<VotingResult> findByAgendaId(String agendaId) {
-        Map<String, AttributeValue> key = Map.of(
-                PK, AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(agendaId)).build(),
-                SK, AttributeValue.builder().s(RESULT_SK).build()
+        Optional<Map<String, AttributeValue>> maybeItem = DynamoGetItemHelper.findByPrimaryKey(
+                dynamoDbClient,
+                dynamoDbProperties.getTableName(),
+                DynamoSingleTableKeys.agendaPk(agendaId),
+                RESULT_SK
         );
-
-        GetItemRequest request = GetItemRequest.builder()
-                .tableName(dynamoDbProperties.getTableName())
-                .key(key)
-                .consistentRead(true)
-                .build();
-
-        Map<String, AttributeValue> item = dynamoDbClient.getItem(request).item();
-        if (item == null || item.isEmpty()) {
+        if (maybeItem.isEmpty()) {
             return Optional.empty();
         }
+
+        Map<String, AttributeValue> item = maybeItem.get();
 
         VotingResultItem resultItem = new VotingResultItem(
                 item.get("agendaId").s(),
