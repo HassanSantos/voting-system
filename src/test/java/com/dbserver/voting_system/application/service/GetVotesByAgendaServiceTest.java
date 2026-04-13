@@ -7,15 +7,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.dbserver.voting_system.application.dto.response.VotingResultResponse;
+import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
-import com.dbserver.voting_system.application.port.out.VotingResultRepositoryPort;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
 import com.dbserver.voting_system.domain.model.Agenda;
 import com.dbserver.voting_system.domain.model.Vote;
-import com.dbserver.voting_system.domain.service.VotingResultCalculator;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GetVotingResultServiceTest {
+class GetVotesByAgendaServiceTest {
 
     @Mock
     private AgendaRepositoryPort agendaRepositoryPort;
@@ -34,42 +32,30 @@ class GetVotingResultServiceTest {
     @Mock
     private VoteRepositoryPort voteRepositoryPort;
 
-    @Mock
-    private VotingResultRepositoryPort votingResultRepositoryPort;
-
-    private GetVotingResultService service;
+    private GetVotesByAgendaService service;
 
     @BeforeEach
     void setup_method_do() {
-        service = new GetVotingResultService(
-                agendaRepositoryPort,
-                voteRepositoryPort,
-                votingResultRepositoryPort,
-                new VotingResultCalculator()
-        );
+        service = new GetVotesByAgendaService(agendaRepositoryPort, voteRepositoryPort);
     }
 
     @Test
-    void shouldCalculateAndPersistResult_method_execute_do() {
-        String agendaId = "agenda-1";
+    void shouldReturnVotesByAgenda_method_execute_do() {
         Instant now = Instant.parse("2026-01-01T10:00:00Z");
+        String agendaId = "agenda-1";
 
         when(agendaRepositoryPort.findById(agendaId))
                 .thenReturn(Optional.of(new Agenda(agendaId, "Pauta", "Descricao", now.minusSeconds(60))));
         when(voteRepositoryPort.findByAgendaId(agendaId)).thenReturn(List.of(
                 new Vote(agendaId, "associate-1", VoteValue.YES, now),
-                new Vote(agendaId, "associate-2", VoteValue.YES, now),
-                new Vote(agendaId, "associate-3", VoteValue.NO, now)
+                new Vote(agendaId, "associate-2", VoteValue.NO, now)
         ));
 
-        VotingResultResponse response = service.execute(agendaId);
+        List<VoteResponse> response = service.execute(agendaId);
 
-        assertEquals(agendaId, response.agendaId());
-        assertEquals(2, response.yesVotes());
-        assertEquals(1, response.noVotes());
-        assertEquals(3, response.totalVotes());
-        assertEquals("APPROVED", response.outcome());
-        verify(votingResultRepositoryPort).save(any());
+        assertEquals(2, response.size());
+        assertEquals("YES", response.getFirst().voteValue());
+        assertEquals("NO", response.get(1).voteValue());
     }
 
     @Test
@@ -79,6 +65,5 @@ class GetVotingResultServiceTest {
         assertThrows(AgendaNotFoundException.class, () -> service.execute("agenda-1"));
 
         verify(voteRepositoryPort, never()).findByAgendaId(any());
-        verify(votingResultRepositoryPort, never()).save(any());
     }
 }

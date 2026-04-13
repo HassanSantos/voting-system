@@ -28,10 +28,12 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<maven.compiler.release>21</maven.compiler.release>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<sonar.projectKey>voting-system</sonar.projectKey>
 		<sonar.projectName>Voting System</sonar.projectName>
 		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -147,6 +149,31 @@
 				<groupId>org.sonarsource.scanner.maven</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>
 				<version>3.11.0.3922</version>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<configuration>
+							<includes>
+								<include>com/dbserver/voting_system/*</include>
+							</includes>
+						</configuration>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

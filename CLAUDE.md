@@ -10,6 +10,20 @@ This project is a backend service built with:
 - Maven
 - JPA / PostgreSQL
 - REST APIs
+- JUnit 5
+- Mockito
+
+
+## 🧠 General Rules
+
+- Always use **JUnit 5 (Jupiter)**
+- Use **Mockito** for mocking dependencies
+- Do NOT use Spring context (`@SpringBootTest`) unless explicitly requested
+- Prefer **pure unit tests** over integration tests
+- Follow **Arrange / Act / Assert (AAA)** pattern
+- Tests must be **isolated and deterministic**
+- Avoid unnecessary complexity
+- name test method name format(description_method_do) 
 
 - The goal of this project is to keep business rules isolated from frameworks and infrastructure concerns, ensuring maintainability, testability, and low coupling.
   S.O.L.I.D: The 5 principles of OOP
@@ -34,6 +48,9 @@ This project follows **Hexagonal Architecture**.
 - Dependencies must always point **inward**.
 
 ---
+
+### Core principles
+
 
 ## Package Structure
 Use the following package organization:
