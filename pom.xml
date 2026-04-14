@@ -104,6 +104,51 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>7.6.0</version>
+				<executions>
+					<execution>
+						<id>generate-http-interfaces</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
+							<generatorName>spring</generatorName>
+							<output>${project.build.directory}/generated-sources/openapi</output>
+							<apiPackage>com.dbserver.voting_system.adapters.in.web.generated.api</apiPackage>
+							<modelPackage>com.dbserver.voting_system.adapters.in.web.generated.model</modelPackage>
+							<invokerPackage>com.dbserver.voting_system.adapters.in.web.generated.invoker</invokerPackage>
+							<generateApiDocumentation>false</generateApiDocumentation>
+							<generateModelDocumentation>false</generateModelDocumentation>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<interfaceOnly>true</interfaceOnly>
+								<skipDefaultInterface>true</skipDefaultInterface>
+								<useTags>true</useTags>
+								<useSpringBoot3>true</useSpringBoot3>
+								<useResponseEntity>false</useResponseEntity>
+								<openApiNullable>false</openApiNullable>
+								<dateLibrary>java8</dateLibrary>
+								<hideGenerationTimestamp>true</hideGenerationTimestamp>
+							</configOptions>
+							<importMappings>
+								<importMapping>CreateAgendaRequest=com.dbserver.voting_system.adapters.in.web.dto.CreateAgendaRequest</importMapping>
+								<importMapping>OpenVotingSessionRequest=com.dbserver.voting_system.adapters.in.web.dto.OpenVotingSessionRequest</importMapping>
+								<importMapping>RegisterVoteRequest=com.dbserver.voting_system.adapters.in.web.dto.RegisterVoteRequest</importMapping>
+								<importMapping>AgendaResponse=com.dbserver.voting_system.application.dto.response.AgendaResponse</importMapping>
+								<importMapping>VotingSessionResponse=com.dbserver.voting_system.application.dto.response.VotingSessionResponse</importMapping>
+								<importMapping>VoteResponse=com.dbserver.voting_system.application.dto.response.VoteResponse</importMapping>
+								<importMapping>VotingResultResponse=com.dbserver.voting_system.application.dto.response.VotingResultResponse</importMapping>
+							</importMappings>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<executions>

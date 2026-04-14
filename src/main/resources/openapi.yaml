@@ -8,7 +8,7 @@ servers:
 paths:
   /agendas:
     post:
-      tags: [Agendas]
+      tags: [Agenda]
       summary: Create a new agenda
       operationId: createAgenda
       requestBody:
@@ -29,7 +29,7 @@ paths:
 
   /agendas/{agendaId}/sessions:
     post:
-      tags: [Voting Sessions]
+      tags: [VotingSession]
       summary: Open a voting session for an agenda
       operationId: openVotingSession
       parameters:
@@ -54,7 +54,7 @@ paths:
 
   /agendas/{agendaId}/votes:
     post:
-      tags: [Votes]
+      tags: [Vote]
       summary: Register a vote for an agenda
       operationId: registerVote
       parameters:
@@ -78,7 +78,7 @@ paths:
           $ref: '#/components/responses/Conflict'
 
     get:
-      tags: [Votes]
+      tags: [Vote]
       summary: List votes by agenda
       operationId: listVotesByAgenda
       parameters:
@@ -97,7 +97,7 @@ paths:
 
   /agendas/votes:
     get:
-      tags: [Votes]
+      tags: [Vote]
       summary: List all votes
       operationId: listAllVotes
       responses:
@@ -112,7 +112,7 @@ paths:
 
   /agendas/{agendaId}/result:
     get:
-      tags: [Results]
+      tags: [VotingResult]
       summary: Get voting result for an agenda
       operationId: getVotingResult
       parameters:
