@@ -12,7 +12,9 @@ import com.dbserver.voting_system.domain.model.VotingSession;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class OpenVotingSessionService implements OpenVotingSessionUseCase {
 

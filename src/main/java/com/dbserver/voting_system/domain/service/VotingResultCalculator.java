@@ -4,8 +4,11 @@ import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import com.dbserver.voting_system.domain.model.Vote;
 import com.dbserver.voting_system.domain.model.VotingResult;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
+@Service
 public class VotingResultCalculator {
 
     public VotingResult calculate(String agendaId, List<Vote> votes) {

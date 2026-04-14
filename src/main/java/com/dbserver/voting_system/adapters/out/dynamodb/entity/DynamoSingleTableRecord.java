@@ -19,7 +19,7 @@ public class DynamoSingleTableRecord {
     private String description;
 
     private String agendaId;
-    private String associateId;
+    private String cpf;
     private String voteValue;
     private String votedAt;
     private String gsi1pk;
@@ -100,12 +100,12 @@ public class DynamoSingleTableRecord {
         this.agendaId = agendaId;
     }
 
-    public String getAssociateId() {
-        return associateId;
+    public String getCpf() {
+        return cpf;
     }
 
-    public void setAssociateId(String associateId) {
-        this.associateId = associateId;
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
     }
 
     public String getVoteValue() {

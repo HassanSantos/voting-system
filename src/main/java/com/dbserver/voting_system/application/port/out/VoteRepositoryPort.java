@@ -9,7 +9,7 @@ public interface VoteRepositoryPort {
 
     List<Vote> findAll();
 
-    boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId);
+    boolean existsByAgendaIdAndCpf(String agendaId, String cpf);
 
     List<Vote> findByAgendaId(String agendaId);
 }

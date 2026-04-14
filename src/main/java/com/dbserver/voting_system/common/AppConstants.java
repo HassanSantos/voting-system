@@ -32,7 +32,7 @@ public final class AppConstants {
         public static final String TITLE_REQUIRED = "title is required";
         public static final String CREATED_AT_REQUIRED = "createdAt is required";
         public static final String AGENDA_ID_REQUIRED = "agendaId is required";
-        public static final String ASSOCIATE_ID_REQUIRED = "associateId is required";
+        public static final String CPF_REQUIRED = "cpf is required";
         public static final String VALUE_REQUIRED = "value is required";
         public static final String VOTED_AT_REQUIRED = "votedAt is required";
         public static final String OPENED_AT_REQUIRED = "openedAt is required";
@@ -41,7 +41,7 @@ public final class AppConstants {
         public static final String ENDS_AT_AFTER_OPENED_AT = "endsAt must be after openedAt";
         public static final String AGENDA_NOT_FOUND_PREFIX = "Agenda not found: ";
         public static final String VOTING_SESSION_ALREADY_OPEN_PREFIX = "Voting session is already open for agenda: ";
-        public static final String DUPLICATE_VOTE_PREFIX = "Vote already registered for associate ";
+        public static final String DUPLICATE_VOTE_PREFIX = "Vote already registered for CPF ";
         public static final String DUPLICATE_VOTE_MIDDLE = " in agenda ";
         public static final String VOTING_SESSION_CLOSED_PREFIX = "Voting session is closed for agenda: ";
         public static final String VOTING_SESSION_NOT_FOUND_PREFIX = "Voting session not found for agenda: ";
@@ -70,9 +70,9 @@ public final class AppConstants {
         public static final String AGENDA_META_SK = "META";
         public static final String SESSION_SK = "SESSION";
         public static final String RESULT_SK = "RESULT";
-        public static final String VOTE_SK_PREFIX = "VOTE#ASSOCIATE#";
+        public static final String VOTE_SK_PREFIX = "VOTE#CPF#";
         public static final String AGENDA_PK_PREFIX = "AGENDA#";
-        public static final String ASSOCIATE_PK_PREFIX = "ASSOCIATE#";
+        public static final String CPF_PK_PREFIX = "CPF#";
 
         public static final String ENTITY_TYPE_AGENDA = "AGENDA";
         public static final String ENTITY_TYPE_VOTE = "VOTE";

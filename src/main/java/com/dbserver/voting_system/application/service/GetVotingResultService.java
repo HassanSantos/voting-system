@@ -11,7 +11,9 @@ import com.dbserver.voting_system.domain.model.VotingResult;
 import com.dbserver.voting_system.domain.service.VotingResultCalculator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class GetVotingResultService implements GetVotingResultUseCase {
 

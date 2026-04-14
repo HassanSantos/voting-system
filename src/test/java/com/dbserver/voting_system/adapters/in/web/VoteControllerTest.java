@@ -52,13 +52,13 @@ class VoteControllerTest {
         Instant now = Instant.parse("2026-01-01T10:00:00Z");
 
         when(registerVoteUseCase.execute(any()))
-                .thenReturn(new VoteResponse("agenda-1", "associate-1", "YES", now));
+                .thenReturn(new VoteResponse("agenda-1", "12345678900", "YES", now));
 
         mockMvc.perform(post("/agendas/agenda-1/votes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "associateId": "associate-1",
+                                  "cpf": "12345678900",
                                   "vote": "yes"
                                 }
                                 """))
@@ -71,36 +71,36 @@ class VoteControllerTest {
 
     @Test
     void shouldReturnConflictWhenDuplicateVote_method_vote_do() throws Exception {
-        when(registerVoteUseCase.execute(any())).thenThrow(new DuplicateVoteException("agenda-1", "associate-1"));
+        when(registerVoteUseCase.execute(any())).thenThrow(new DuplicateVoteException("agenda-1", "12345678900"));
 
         mockMvc.perform(post("/agendas/agenda-1/votes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "associateId": "associate-1",
+                                  "cpf": "12345678900",
                                   "vote": "yes"
                                 }
                                 """))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Vote already registered for associate associate-1 in agenda agenda-1"));
+                .andExpect(jsonPath("$.message").value("Vote already registered for CPF 12345678900 in agenda agenda-1"));
     }
 
     @Test
     void shouldListVotesByAgenda_method_listVotes_do() throws Exception {
         Instant now = Instant.parse("2026-01-01T10:00:00Z");
         when(getVotesByAgendaUseCase.execute("agenda-1"))
-                .thenReturn(List.of(new VoteResponse("agenda-1", "associate-1", "YES", now)));
+                .thenReturn(List.of(new VoteResponse("agenda-1", "12345678900", "YES", now)));
 
         mockMvc.perform(get("/agendas/agenda-1/votes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].associateId").value("associate-1"));
+                .andExpect(jsonPath("$[0].cpf").value("12345678900"));
     }
 
     @Test
     void shouldListAllVotes_method_listAllVotes_do() throws Exception {
         Instant now = Instant.parse("2026-01-01T10:00:00Z");
         when(getAllVotesUseCase.execute())
-                .thenReturn(List.of(new VoteResponse("agenda-1", "associate-1", "YES", now)));
+                .thenReturn(List.of(new VoteResponse("agenda-1", "12345678900", "YES", now)));
 
         mockMvc.perform(get("/agendas/votes"))
                 .andExpect(status().isOk())

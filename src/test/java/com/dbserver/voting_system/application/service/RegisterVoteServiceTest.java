@@ -59,7 +59,7 @@ class RegisterVoteServiceTest {
 
     @Test
     void shouldRegisterVote_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "associate-1", VoteValue.YES);
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
         VotingSession session = new VotingSession(
                 "agenda-1",
                 NOW.minusSeconds(30),
@@ -70,12 +70,12 @@ class RegisterVoteServiceTest {
         when(agendaRepositoryPort.findById("agenda-1"))
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
-        when(voteRepositoryPort.existsByAgendaIdAndAssociateId("agenda-1", "associate-1")).thenReturn(false);
+        when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(false);
 
         VoteResponse response = service.execute(command);
 
         assertEquals("agenda-1", response.agendaId());
-        assertEquals("associate-1", response.associateId());
+        assertEquals("12345678900", response.cpf());
         assertEquals("YES", response.voteValue());
         assertEquals(NOW, response.votedAt());
         verify(voteRepositoryPort).save(any());
@@ -83,7 +83,7 @@ class RegisterVoteServiceTest {
 
     @Test
     void shouldThrowAgendaNotFoundException_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "associate-1", VoteValue.YES);
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
         when(agendaRepositoryPort.findById("agenda-1")).thenReturn(Optional.empty());
 
         assertThrows(AgendaNotFoundException.class, () -> service.execute(command));
@@ -94,7 +94,7 @@ class RegisterVoteServiceTest {
 
     @Test
     void shouldThrowVotingSessionNotFoundException_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "associate-1", VoteValue.YES);
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
         when(agendaRepositoryPort.findById("agenda-1"))
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.empty());
@@ -106,7 +106,7 @@ class RegisterVoteServiceTest {
 
     @Test
     void shouldThrowVotingSessionClosedException_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "associate-1", VoteValue.YES);
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
         VotingSession closedSession = new VotingSession(
                 "agenda-1",
                 NOW.minusSeconds(600),
@@ -120,13 +120,13 @@ class RegisterVoteServiceTest {
 
         assertThrows(VotingSessionClosedException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).existsByAgendaIdAndAssociateId(any(), any());
+        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
         verify(voteRepositoryPort, never()).save(any());
     }
 
     @Test
     void shouldThrowDuplicateVoteException_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "associate-1", VoteValue.YES);
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
         VotingSession session = new VotingSession(
                 "agenda-1",
                 NOW.minusSeconds(30),
@@ -137,11 +137,11 @@ class RegisterVoteServiceTest {
         when(agendaRepositoryPort.findById("agenda-1"))
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
-        when(voteRepositoryPort.existsByAgendaIdAndAssociateId("agenda-1", "associate-1")).thenReturn(true);
+        when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(true);
 
         assertThrows(DuplicateVoteException.class, () -> service.execute(command));
 
         verify(voteRepositoryPort, never()).save(any());
-        verify(voteRepositoryPort).existsByAgendaIdAndAssociateId(eq("agenda-1"), eq("associate-1"));
+        verify(voteRepositoryPort).existsByAgendaIdAndCpf(eq("agenda-1"), eq("12345678900"));
     }
 }

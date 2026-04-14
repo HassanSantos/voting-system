@@ -13,20 +13,20 @@ public class VoteSingleTableMapper {
         return Dynamo.AGENDA_PK_PREFIX + agendaId;
     }
 
-    private static String voteSk(String associateId) {
-        return Dynamo.VOTE_SK_PREFIX + associateId;
+    private static String voteSk(String cpf) {
+        return Dynamo.VOTE_SK_PREFIX + cpf;
     }
 
     public DynamoSingleTableRecord toRecord(VoteItem item) {
         DynamoSingleTableRecord record = new DynamoSingleTableRecord();
         record.setPk(agendaPk(item.agendaId()));
-        record.setSk(voteSk(item.associateId()));
+        record.setSk(voteSk(item.cpf()));
         record.setEntityType(Dynamo.ENTITY_TYPE_VOTE);
         record.setAgendaId(item.agendaId());
-        record.setAssociateId(item.associateId());
+        record.setCpf(item.cpf());
         record.setVoteValue(item.voteValue());
         record.setVotedAt(item.votedAt().toString());
-        record.setGsi1pk(Dynamo.ASSOCIATE_PK_PREFIX + item.associateId());
+        record.setGsi1pk(Dynamo.CPF_PK_PREFIX + item.cpf());
         record.setGsi1sk(Dynamo.AGENDA_PK_PREFIX + item.agendaId() + Dynamo.HASH_SEPARATOR + item.votedAt());
         return record;
     }
@@ -34,7 +34,7 @@ public class VoteSingleTableMapper {
     public VoteItem toItem(DynamoSingleTableRecord record) {
         return new VoteItem(
                 record.getAgendaId(),
-                record.getAssociateId(),
+                record.getCpf(),
                 record.getVoteValue(),
                 Instant.parse(record.getVotedAt())
         );

@@ -10,7 +10,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class CreateAgendaService implements CreateAgendaUseCase {
 

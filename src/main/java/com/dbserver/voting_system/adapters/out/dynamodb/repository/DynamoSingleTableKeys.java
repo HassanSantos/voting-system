@@ -22,7 +22,7 @@ final class DynamoSingleTableKeys {
         return AGENDA_PK_PREFIX + agendaId;
     }
 
-    static String voteSk(String associateId) {
-        return VOTE_SK_PREFIX + associateId;
+    static String voteSk(String cpf) {
+        return VOTE_SK_PREFIX + cpf;
     }
 }

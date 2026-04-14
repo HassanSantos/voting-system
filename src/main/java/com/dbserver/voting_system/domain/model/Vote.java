@@ -10,13 +10,13 @@ import lombok.Getter;
 public class Vote {
 
     private final String agendaId;
-    private final String associateId;
+    private final String cpf;
     private final VoteValue value;
     private final Instant votedAt;
 
-    public Vote(String agendaId, String associateId, VoteValue value, Instant votedAt) {
+    public Vote(String agendaId, String cpf, VoteValue value, Instant votedAt) {
         this.agendaId = Objects.requireNonNull(agendaId, AppConstants.Messages.AGENDA_ID_REQUIRED);
-        this.associateId = Objects.requireNonNull(associateId, AppConstants.Messages.ASSOCIATE_ID_REQUIRED);
+        this.cpf = Objects.requireNonNull(cpf, AppConstants.Messages.CPF_REQUIRED);
         this.value = Objects.requireNonNull(value, AppConstants.Messages.VALUE_REQUIRED);
         this.votedAt = Objects.requireNonNull(votedAt, AppConstants.Messages.VOTED_AT_REQUIRED);
     }

@@ -33,7 +33,7 @@ public class VoteController {
     public VoteResponse vote(@PathVariable String agendaId, @RequestBody RegisterVoteRequest request) {
         RegisterVoteCommand command = new RegisterVoteCommand(
                 agendaId,
-                request.associateId(),
+                request.cpf(),
                 VoteValue.valueOf(request.vote().toUpperCase())
         );
 

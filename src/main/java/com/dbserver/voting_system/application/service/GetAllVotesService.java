@@ -6,7 +6,9 @@ import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.domain.model.Vote;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class GetAllVotesService implements GetAllVotesUseCase {
 
@@ -23,7 +25,7 @@ public class GetAllVotesService implements GetAllVotesUseCase {
     private VoteResponse toVoteResponse(Vote vote) {
         return new VoteResponse(
                 vote.getAgendaId(),
-                vote.getAssociateId(),
+                vote.getCpf(),
                 vote.getValue().name(),
                 vote.getVotedAt()
         );

@@ -15,7 +15,9 @@ import com.dbserver.voting_system.domain.model.VotingSession;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 public class RegisterVoteService implements RegisterVoteUseCase {
 
@@ -37,15 +39,15 @@ public class RegisterVoteService implements RegisterVoteUseCase {
         }
 
         boolean alreadyVoted = voteRepositoryPort
-                .existsByAgendaIdAndAssociateId(command.agendaId(), command.associateId());
+                .existsByAgendaIdAndCpf(command.agendaId(), command.cpf());
 
         if (alreadyVoted) {
-            throw new DuplicateVoteException(command.agendaId(), command.associateId());
+            throw new DuplicateVoteException(command.agendaId(), command.cpf());
         }
 
         Vote vote = new Vote(
                 command.agendaId(),
-                command.associateId(),
+                command.cpf(),
                 command.voteValue(),
                 Instant.now(clock)
         );
@@ -54,7 +56,7 @@ public class RegisterVoteService implements RegisterVoteUseCase {
 
         return new VoteResponse(
                 vote.getAgendaId(),
-                vote.getAssociateId(),
+                vote.getCpf(),
                 vote.getValue().name(),
                 vote.getVotedAt()
         );

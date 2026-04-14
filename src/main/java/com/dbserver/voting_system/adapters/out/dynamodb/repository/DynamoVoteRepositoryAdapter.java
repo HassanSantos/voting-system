@@ -65,11 +65,11 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
     }
 
     @Override
-    public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
+    public boolean existsByAgendaIdAndCpf(String agendaId, String cpf) {
         DynamoSingleTableRecord record = votingSystemTable.getItem(
                 Key.builder()
                         .partitionValue(DynamoSingleTableKeys.agendaPk(agendaId))
-                        .sortValue(DynamoSingleTableKeys.voteSk(associateId))
+                        .sortValue(DynamoSingleTableKeys.voteSk(cpf))
                         .build()
         );
         return record != null;
