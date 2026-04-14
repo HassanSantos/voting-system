@@ -19,6 +19,7 @@ public class AgendaController implements AgendaApi {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Override
     public AgendaResponse createAgenda(@RequestBody CreateAgendaRequest request) {
         return createAgendaUseCase.execute(new CreateAgendaCommand(request.title(), request.description()));
     }
