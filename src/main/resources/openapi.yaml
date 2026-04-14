@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: Voting System API
+  version: "1.0.0"
+  description: API for agenda creation, voting sessions, vote registration, and voting results.
+servers:
+  - url: /api/v1
+paths:
+  /agendas:
+    post:
+      tags: [Agendas]
+      summary: Create a new agenda
+      operationId: createAgenda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgendaRequest'
+      responses:
+        '201':
+          description: Agenda created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agendas/{agendaId}/sessions:
+    post:
+      tags: [Voting Sessions]
+      summary: Open a voting session for an agenda
+      operationId: openVotingSession
+      parameters:
+        - $ref: '#/components/parameters/AgendaId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenVotingSessionRequest'
+      responses:
+        '201':
+          description: Voting session opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VotingSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /agendas/{agendaId}/votes:
+    post:
+      tags: [Votes]
+      summary: Register a vote for an agenda
+      operationId: registerVote
+      parameters:
+        - $ref: '#/components/parameters/AgendaId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterVoteRequest'
+      responses:
+        '201':
+          description: Vote registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    get:
+      tags: [Votes]
+      summary: List votes by agenda
+      operationId: listVotesByAgenda
+      parameters:
+        - $ref: '#/components/parameters/AgendaId'
+      responses:
+        '200':
+          description: Votes found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VoteResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /agendas/votes:
+    get:
+      tags: [Votes]
+      summary: List all votes
+      operationId: listAllVotes
+      responses:
+        '200':
+          description: Votes found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VoteResponse'
+
+  /agendas/{agendaId}/result:
+    get:
+      tags: [Results]
+      summary: Get voting result for an agenda
+      operationId: getVotingResult
+      parameters:
+        - $ref: '#/components/parameters/AgendaId'
+      responses:
+        '200':
+          description: Voting result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VotingResultResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    AgendaId:
+      name: agendaId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Business conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CreateAgendaRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          example: Increase transparency
+        description:
+          type: string
+          example: Proposal to publish monthly reports
+
+    OpenVotingSessionRequest:
+      type: object
+      properties:
+        durationMinutes:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 5
+
+    RegisterVoteRequest:
+      type: object
+      required: [cpf, vote]
+      properties:
+        cpf:
+          type: string
+          example: "12345678900"
+        vote:
+          type: string
+          enum: [YES, NO, yes, no]
+          example: yes
+
+    AgendaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 4aaf2518-9d4f-4505-b0d5-fc5f5b049e8e
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    VoteResponse:
+      type: object
+      properties:
+        agendaId:
+          type: string
+        cpf:
+          type: string
+        voteValue:
+          type: string
+          example: YES
+        votedAt:
+          type: string
+          format: date-time
+
+    VotingSessionResponse:
+      type: object
+      properties:
+        agendaId:
+          type: string
+        openedAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          example: OPEN
+
+    VotingResultResponse:
+      type: object
+      properties:
+        agendaId:
+          type: string
+        yesVotes:
+          type: integer
+          format: int64
+        noVotes:
+          type: integer
+          format: int64
+        totalVotes:
+          type: integer
+          format: int64
+        outcome:
+          type: string
+          example: APPROVED
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
