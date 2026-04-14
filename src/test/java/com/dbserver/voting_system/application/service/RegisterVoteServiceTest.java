@@ -11,12 +11,16 @@ import static org.mockito.Mockito.when;
 import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
+import com.dbserver.voting_system.application.port.out.CpfEligibilityPort;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
+import com.dbserver.voting_system.domain.enums.CpfEligibilityStatus;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
 import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
+import com.dbserver.voting_system.domain.exception.InvalidCpfException;
+import com.dbserver.voting_system.domain.exception.UnableToVoteException;
 import com.dbserver.voting_system.domain.exception.VotingSessionClosedException;
 import com.dbserver.voting_system.domain.exception.VotingSessionNotFoundException;
 import com.dbserver.voting_system.domain.model.Agenda;
@@ -45,6 +49,9 @@ class RegisterVoteServiceTest {
     @Mock
     private VoteRepositoryPort voteRepositoryPort;
 
+    @Mock
+    private CpfEligibilityPort cpfEligibilityPort;
+
     private RegisterVoteService service;
 
     @BeforeEach
@@ -53,6 +60,7 @@ class RegisterVoteServiceTest {
                 agendaRepositoryPort,
                 votingSessionRepositoryPort,
                 voteRepositoryPort,
+                cpfEligibilityPort,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -70,6 +78,7 @@ class RegisterVoteServiceTest {
         when(agendaRepositoryPort.findById("agenda-1"))
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
+        when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
         when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(false);
 
         VoteResponse response = service.execute(command);
@@ -137,11 +146,54 @@ class RegisterVoteServiceTest {
         when(agendaRepositoryPort.findById("agenda-1"))
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
+        when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
         when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(true);
 
         assertThrows(DuplicateVoteException.class, () -> service.execute(command));
 
         verify(voteRepositoryPort, never()).save(any());
         verify(voteRepositoryPort).existsByAgendaIdAndCpf(eq("agenda-1"), eq("12345678900"));
+    }
+
+    @Test
+    void shouldThrowInvalidCpfException_method_execute_do() {
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
+        VotingSession session = new VotingSession(
+                "agenda-1",
+                NOW.minusSeconds(30),
+                NOW.plusSeconds(300),
+                VotingSessionStatus.OPEN
+        );
+
+        when(agendaRepositoryPort.findById("agenda-1"))
+                .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
+        when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
+        when(cpfEligibilityPort.verify("12345678900")).thenThrow(new InvalidCpfException("12345678900"));
+
+        assertThrows(InvalidCpfException.class, () -> service.execute(command));
+
+        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
+        verify(voteRepositoryPort, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowUnableToVoteException_method_execute_do() {
+        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
+        VotingSession session = new VotingSession(
+                "agenda-1",
+                NOW.minusSeconds(30),
+                NOW.plusSeconds(300),
+                VotingSessionStatus.OPEN
+        );
+
+        when(agendaRepositoryPort.findById("agenda-1"))
+                .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
+        when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
+        when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.UNABLE_TO_VOTE);
+
+        assertThrows(UnableToVoteException.class, () -> service.execute(command));
+
+        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
+        verify(voteRepositoryPort, never()).save(any());
     }
 }

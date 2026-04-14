@@ -14,6 +14,7 @@ import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.config.GlobalExceptionHandler;
 import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
+import com.dbserver.voting_system.domain.exception.InvalidCpfException;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,6 +84,22 @@ class VoteControllerTest {
                                 """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Vote already registered for CPF 12345678900 in agenda agenda-1"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenCpfIsInvalid_method_vote_do() throws Exception {
+        when(registerVoteUseCase.execute(any())).thenThrow(new InvalidCpfException("12345678900"));
+
+        mockMvc.perform(post("/agendas/agenda-1/votes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "cpf": "12345678900",
+                                  "vote": "yes"
+                                }
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("CPF not found: 12345678900"));
     }
 
     @Test

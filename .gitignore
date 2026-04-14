@@ -34,3 +34,7 @@ build/
 
 ### LocalStack ###
 .localstack/
+
+### Codex local state ###
+.codex
+.codex/

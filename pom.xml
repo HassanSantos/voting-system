@@ -210,6 +210,9 @@
 							<includes>
 								<include>com/dbserver/voting_system/*</include>
 							</includes>
+							<excludes>
+								<exclude>*MockitoMock*</exclude>
+							</excludes>
 						</configuration>
 						<goals>
 							<goal>prepare-agent</goal>

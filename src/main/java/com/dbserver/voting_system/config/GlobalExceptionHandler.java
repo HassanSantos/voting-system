@@ -2,6 +2,8 @@ package com.dbserver.voting_system.config;
 
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
 import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
+import com.dbserver.voting_system.domain.exception.InvalidCpfException;
+import com.dbserver.voting_system.domain.exception.UnableToVoteException;
 import com.dbserver.voting_system.domain.exception.VotingSessionAlreadyOpenException;
 import com.dbserver.voting_system.domain.exception.VotingSessionClosedException;
 import com.dbserver.voting_system.domain.exception.VotingSessionNotFoundException;
@@ -20,6 +22,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(VotingSessionNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleSessionNotFound(VotingSessionNotFoundException exception) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler({InvalidCpfException.class, UnableToVoteException.class})
+    public ResponseEntity<ErrorResponse> handleCpfNotFound(RuntimeException exception) {
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 

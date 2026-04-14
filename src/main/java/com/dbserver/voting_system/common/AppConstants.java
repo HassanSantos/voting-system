@@ -45,6 +45,8 @@ public final class AppConstants {
         public static final String DUPLICATE_VOTE_MIDDLE = " in agenda ";
         public static final String VOTING_SESSION_CLOSED_PREFIX = "Voting session is closed for agenda: ";
         public static final String VOTING_SESSION_NOT_FOUND_PREFIX = "Voting session not found for agenda: ";
+        public static final String INVALID_CPF_PREFIX = "CPF not found: ";
+        public static final String UNABLE_TO_VOTE_PREFIX = "CPF is unable to vote: ";
 
         private Messages() {
         }

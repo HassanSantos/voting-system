@@ -183,7 +183,8 @@ components:
       properties:
         cpf:
           type: string
-          example: "12345678900"
+          description: "CPF com ou sem máscara. Exemplo: 12106842686 ou 121.068.426-86"
+          example: "12106842686"
         vote:
           type: string
           enum: [YES, NO, yes, no]
