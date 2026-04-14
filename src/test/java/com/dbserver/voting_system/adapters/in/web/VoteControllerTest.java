@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.dbserver.voting_system.adapters.in.web.mapper.WebCommandMapper;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.in.GetAllVotesUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
@@ -42,7 +43,12 @@ class VoteControllerTest {
 
     @BeforeEach
     void setup_method_do() {
-        VoteController controller = new VoteController(registerVoteUseCase, getAllVotesUseCase, getVotesByAgendaUseCase);
+        VoteController controller = new VoteController(
+                registerVoteUseCase,
+                getAllVotesUseCase,
+                getVotesByAgendaUseCase,
+                new WebCommandMapper()
+        );
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -122,5 +128,19 @@ class VoteControllerTest {
         mockMvc.perform(get("/agendas/votes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].voteValue").value("YES"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenVoteIsBlank_method_vote_do() throws Exception {
+        mockMvc.perform(post("/agendas/agenda-1/votes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "cpf": "12345678900",
+                                  "vote": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("vote is required"));
     }
 }

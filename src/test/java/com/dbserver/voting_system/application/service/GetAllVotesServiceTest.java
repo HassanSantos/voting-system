@@ -3,6 +3,7 @@ package com.dbserver.voting_system.application.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.domain.enums.VoteValue;
@@ -25,7 +26,7 @@ class GetAllVotesServiceTest {
 
     @BeforeEach
     void setup_method_do() {
-        service = new GetAllVotesService(voteRepositoryPort);
+        service = new GetAllVotesService(voteRepositoryPort, new ApplicationResponseMapper());
     }
 
     @Test

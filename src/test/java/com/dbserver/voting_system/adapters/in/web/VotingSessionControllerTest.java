@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.dbserver.voting_system.adapters.in.web.mapper.WebCommandMapper;
 import com.dbserver.voting_system.application.dto.response.VotingSessionResponse;
 import com.dbserver.voting_system.application.port.in.OpenVotingSessionUseCase;
 import com.dbserver.voting_system.config.GlobalExceptionHandler;
@@ -31,7 +32,7 @@ class VotingSessionControllerTest {
 
     @BeforeEach
     void setup_method_do() {
-        VotingSessionController controller = new VotingSessionController(openVotingSessionUseCase);
+        VotingSessionController controller = new VotingSessionController(openVotingSessionUseCase, new WebCommandMapper());
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

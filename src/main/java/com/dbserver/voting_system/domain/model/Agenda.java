@@ -1,10 +1,11 @@
 package com.dbserver.voting_system.domain.model;
 
-import com.dbserver.voting_system.common.AppConstants;
 import java.time.Instant;
-import java.util.Objects;
 
 public class Agenda {
+    private static final String ID_REQUIRED = "id is required";
+    private static final String TITLE_REQUIRED = "title is required";
+    private static final String CREATED_AT_REQUIRED = "createdAt is required";
 
     private final String id;
     private final String title;
@@ -12,10 +13,20 @@ public class Agenda {
     private final Instant createdAt;
 
     public Agenda(String id, String title, String description, Instant createdAt) {
-        this.id = Objects.requireNonNull(id, AppConstants.Messages.ID_REQUIRED);
-        this.title = Objects.requireNonNull(title, AppConstants.Messages.TITLE_REQUIRED);
+        if (id == null) {
+            throw new IllegalArgumentException(ID_REQUIRED);
+        }
+        if (title == null) {
+            throw new IllegalArgumentException(TITLE_REQUIRED);
+        }
+        if (createdAt == null) {
+            throw new IllegalArgumentException(CREATED_AT_REQUIRED);
+        }
+
+        this.id = id;
+        this.title = title;
         this.description = description;
-        this.createdAt = Objects.requireNonNull(createdAt, AppConstants.Messages.CREATED_AT_REQUIRED);
+        this.createdAt = createdAt;
     }
 
     public String getId() {

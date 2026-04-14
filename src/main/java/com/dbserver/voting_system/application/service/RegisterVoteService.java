@@ -2,6 +2,7 @@ package com.dbserver.voting_system.application.service;
 
 import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.CpfEligibilityPort;
@@ -9,7 +10,6 @@ import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.domain.enums.CpfEligibilityStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
-import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
 import com.dbserver.voting_system.domain.exception.UnableToVoteException;
 import com.dbserver.voting_system.domain.exception.VotingSessionClosedException;
 import com.dbserver.voting_system.domain.exception.VotingSessionNotFoundException;
@@ -29,6 +29,7 @@ public class RegisterVoteService implements RegisterVoteUseCase {
     private final VoteRepositoryPort voteRepositoryPort;
     private final CpfEligibilityPort cpfEligibilityPort;
     private final Clock clock;
+    private final ApplicationResponseMapper responseMapper;
 
     @Override
     public VoteResponse execute(RegisterVoteCommand command) {
@@ -47,13 +48,6 @@ public class RegisterVoteService implements RegisterVoteUseCase {
             throw new UnableToVoteException(command.cpf());
         }
 
-        boolean alreadyVoted = voteRepositoryPort
-                .existsByAgendaIdAndCpf(command.agendaId(), command.cpf());
-
-        if (alreadyVoted) {
-            throw new DuplicateVoteException(command.agendaId(), command.cpf());
-        }
-
         Vote vote = new Vote(
                 command.agendaId(),
                 command.cpf(),
@@ -61,13 +55,6 @@ public class RegisterVoteService implements RegisterVoteUseCase {
                 Instant.now(clock)
         );
 
-        voteRepositoryPort.save(vote);
-
-        return new VoteResponse(
-                vote.getAgendaId(),
-                vote.getCpf(),
-                vote.getValue().name(),
-                vote.getVotedAt()
-        );
+        return responseMapper.toVoteResponse(voteRepositoryPort.saveIfAbsent(vote));
     }
 }

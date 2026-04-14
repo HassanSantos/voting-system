@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
@@ -36,7 +37,11 @@ class GetVotesByAgendaServiceTest {
 
     @BeforeEach
     void setup_method_do() {
-        service = new GetVotesByAgendaService(agendaRepositoryPort, voteRepositoryPort);
+        service = new GetVotesByAgendaService(
+                agendaRepositoryPort,
+                voteRepositoryPort,
+                new ApplicationResponseMapper()
+        );
     }
 
     @Test

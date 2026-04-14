@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.dbserver.voting_system.adapters.in.web.mapper.WebCommandMapper;
 import com.dbserver.voting_system.application.dto.response.AgendaResponse;
 import com.dbserver.voting_system.application.port.in.CreateAgendaUseCase;
 import com.dbserver.voting_system.config.GlobalExceptionHandler;
@@ -30,7 +31,7 @@ class AgendaControllerTest {
 
     @BeforeEach
     void setup_method_do() {
-        AgendaController controller = new AgendaController(createAgendaUseCase);
+        AgendaController controller = new AgendaController(createAgendaUseCase, new WebCommandMapper());
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -60,8 +61,6 @@ class AgendaControllerTest {
 
     @Test
     void shouldReturnBadRequest_method_createAgenda_do() throws Exception {
-        when(createAgendaUseCase.execute(any())).thenThrow(new IllegalArgumentException("title is required"));
-
         mockMvc.perform(post("/agendas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -4,10 +4,6 @@ import com.dbserver.voting_system.common.AppConstants;
 
 final class DynamoSingleTableKeys {
 
-    static final String TABLE_NAME = AppConstants.Dynamo.TABLE_NAME;
-    static final String PK = AppConstants.Dynamo.PK;
-    static final String SK = AppConstants.Dynamo.SK;
-    static final String ENTITY_TYPE = AppConstants.Dynamo.ENTITY_TYPE;
 
     static final String AGENDA_META_SK = AppConstants.Dynamo.AGENDA_META_SK;
     static final String SESSION_SK = AppConstants.Dynamo.SESSION_SK;

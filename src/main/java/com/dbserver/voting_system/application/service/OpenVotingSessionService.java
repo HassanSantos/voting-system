@@ -2,10 +2,10 @@ package com.dbserver.voting_system.application.service;
 
 import com.dbserver.voting_system.application.dto.request.OpenVotingSessionCommand;
 import com.dbserver.voting_system.application.dto.response.VotingSessionResponse;
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.port.in.OpenVotingSessionUseCase;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
-import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
 import com.dbserver.voting_system.domain.exception.VotingSessionAlreadyOpenException;
 import com.dbserver.voting_system.domain.model.VotingSession;
@@ -18,11 +18,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OpenVotingSessionService implements OpenVotingSessionUseCase {
 
-    private static final long DEFAULT_DURATION_MINUTES = 1L;
-
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VotingSessionRepositoryPort votingSessionRepositoryPort;
     private final Clock clock;
+    private final ApplicationResponseMapper responseMapper;
 
     @Override
     public VotingSessionResponse execute(OpenVotingSessionCommand command) {
@@ -35,26 +34,11 @@ public class OpenVotingSessionService implements OpenVotingSessionUseCase {
             throw new VotingSessionAlreadyOpenException(command.agendaId());
         }
 
-        long durationMinutes = command.durationMinutes() == null || command.durationMinutes() <= 0
-                ? DEFAULT_DURATION_MINUTES
-                : command.durationMinutes();
-
         Instant openedAt = Instant.now(clock);
-        VotingSession session = new VotingSession(
-                command.agendaId(),
-                openedAt,
-                openedAt.plusSeconds(durationMinutes * 60),
-                VotingSessionStatus.OPEN
-        );
+        VotingSession session = VotingSession.open(command.agendaId(), openedAt, command.durationMinutes());
 
         VotingSession savedSession = votingSessionRepositoryPort.save(session);
 
-        return new VotingSessionResponse(
-                savedSession.getAgendaId(),
-                savedSession.getOpenedAt(),
-                savedSession.getEndsAt(),
-                savedSession.getStatus()
-                        .name()
-        );
+        return responseMapper.toVotingSessionResponse(savedSession, openedAt);
     }
 }

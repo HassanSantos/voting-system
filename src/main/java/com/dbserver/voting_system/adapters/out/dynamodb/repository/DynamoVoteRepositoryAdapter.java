@@ -8,6 +8,7 @@ import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VoteDynamoMapper;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VoteSingleTableMapper;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.common.AppConstants;
+import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
 import com.dbserver.voting_system.domain.model.Vote;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,9 +19,11 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 @Repository
 @RequiredArgsConstructor
@@ -31,9 +34,22 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
     private final VoteSingleTableMapper voteSingleTableMapper;
 
     @Override
-    public void save(Vote vote) {
+    public Vote saveIfAbsent(Vote vote) {
         VoteItem item = voteDynamoMapper.toItem(vote);
-        votingSystemTable.putItem(voteSingleTableMapper.toRecord(item));
+        DynamoSingleTableRecord record = voteSingleTableMapper.toRecord(item);
+        Expression condition = Expression.builder()
+                .expression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
+                .build();
+
+        try {
+            votingSystemTable.putItem(PutItemEnhancedRequest.builder(DynamoSingleTableRecord.class)
+                    .item(record)
+                    .conditionExpression(condition)
+                    .build());
+            return vote;
+        } catch (ConditionalCheckFailedException exception) {
+            throw new DuplicateVoteException(vote.getAgendaId(), vote.getCpf());
+        }
     }
 
     @Override
@@ -62,17 +78,6 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
                 .map(voteDynamoMapper::toDomain)
                 .sorted(Comparator.comparing(Vote::getVotedAt))
                 .toList();
-    }
-
-    @Override
-    public boolean existsByAgendaIdAndCpf(String agendaId, String cpf) {
-        DynamoSingleTableRecord record = votingSystemTable.getItem(
-                Key.builder()
-                        .partitionValue(DynamoSingleTableKeys.agendaPk(agendaId))
-                        .sortValue(DynamoSingleTableKeys.voteSk(cpf))
-                        .build()
-        );
-        return record != null;
     }
 
     @Override

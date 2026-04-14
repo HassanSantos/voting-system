@@ -3,11 +3,11 @@ package com.dbserver.voting_system.application.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
@@ -61,7 +61,8 @@ class RegisterVoteServiceTest {
                 votingSessionRepositoryPort,
                 voteRepositoryPort,
                 cpfEligibilityPort,
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                new ApplicationResponseMapper()
         );
     }
 
@@ -79,7 +80,7 @@ class RegisterVoteServiceTest {
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
         when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
-        when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(false);
+        when(voteRepositoryPort.saveIfAbsent(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         VoteResponse response = service.execute(command);
 
@@ -87,7 +88,7 @@ class RegisterVoteServiceTest {
         assertEquals("12345678900", response.cpf());
         assertEquals("YES", response.voteValue());
         assertEquals(NOW, response.votedAt());
-        verify(voteRepositoryPort).save(any());
+        verify(voteRepositoryPort).saveIfAbsent(any());
     }
 
     @Test
@@ -98,7 +99,7 @@ class RegisterVoteServiceTest {
         assertThrows(AgendaNotFoundException.class, () -> service.execute(command));
 
         verify(votingSessionRepositoryPort, never()).findByAgendaId(any());
-        verify(voteRepositoryPort, never()).save(any());
+        verify(voteRepositoryPort, never()).saveIfAbsent(any());
     }
 
     @Test
@@ -110,7 +111,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(VotingSessionNotFoundException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).save(any());
+        verify(voteRepositoryPort, never()).saveIfAbsent(any());
     }
 
     @Test
@@ -129,8 +130,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(VotingSessionClosedException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
-        verify(voteRepositoryPort, never()).save(any());
+        verify(voteRepositoryPort, never()).saveIfAbsent(any());
     }
 
     @Test
@@ -147,12 +147,12 @@ class RegisterVoteServiceTest {
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
         when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
-        when(voteRepositoryPort.existsByAgendaIdAndCpf("agenda-1", "12345678900")).thenReturn(true);
+        when(voteRepositoryPort.saveIfAbsent(any()))
+                .thenThrow(new DuplicateVoteException("agenda-1", "12345678900"));
 
         assertThrows(DuplicateVoteException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).save(any());
-        verify(voteRepositoryPort).existsByAgendaIdAndCpf(eq("agenda-1"), eq("12345678900"));
+        verify(voteRepositoryPort).saveIfAbsent(any());
     }
 
     @Test
@@ -172,8 +172,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(InvalidCpfException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
-        verify(voteRepositoryPort, never()).save(any());
+        verify(voteRepositoryPort, never()).saveIfAbsent(any());
     }
 
     @Test
@@ -193,7 +192,6 @@ class RegisterVoteServiceTest {
 
         assertThrows(UnableToVoteException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).existsByAgendaIdAndCpf(any(), any());
-        verify(voteRepositoryPort, never()).save(any());
+        verify(voteRepositoryPort, never()).saveIfAbsent(any());
     }
 }

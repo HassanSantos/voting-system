@@ -8,7 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.dto.request.CreateAgendaCommand;
+import com.dbserver.voting_system.domain.exception.InvalidAgendaTitleException;
 import com.dbserver.voting_system.application.dto.response.AgendaResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.domain.model.Agenda;
@@ -33,7 +35,11 @@ class CreateAgendaServiceTest {
 
     @BeforeEach
     void setup_method_do() {
-        service = new CreateAgendaService(agendaRepositoryPort, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new CreateAgendaService(
+                agendaRepositoryPort,
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                new ApplicationResponseMapper()
+        );
     }
 
     @Test
@@ -52,10 +58,10 @@ class CreateAgendaServiceTest {
     }
 
     @Test
-    void shouldThrowIllegalArgumentException_method_execute_do() {
+    void shouldThrowInvalidAgendaTitleException_method_execute_do() {
         CreateAgendaCommand command = new CreateAgendaCommand("   ", "Descricao");
 
-        assertThrows(IllegalArgumentException.class, () -> service.execute(command));
+        assertThrows(InvalidAgendaTitleException.class, () -> service.execute(command));
 
         verify(agendaRepositoryPort, never()).save(any());
     }
