@@ -1,5 +1,6 @@
 package com.dbserver.voting_system.config;
 
+import com.dbserver.voting_system.common.AppConstants;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,5 +8,5 @@ import lombok.Setter;
 @Setter
 public class DynamoDbProperties {
 
-    private String tableName = "voting-system";
+    private String tableName = AppConstants.Dynamo.TABLE_NAME;
 }

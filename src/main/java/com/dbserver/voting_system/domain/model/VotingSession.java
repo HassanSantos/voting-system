@@ -1,5 +1,6 @@
 package com.dbserver.voting_system.domain.model;
 
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
 import java.time.Instant;
 import java.util.Objects;
@@ -12,13 +13,13 @@ public class VotingSession {
     private final VotingSessionStatus status;
 
     public VotingSession(String agendaId, Instant openedAt, Instant endsAt, VotingSessionStatus status) {
-        this.agendaId = Objects.requireNonNull(agendaId, "agendaId is required");
-        this.openedAt = Objects.requireNonNull(openedAt, "openedAt is required");
-        this.endsAt = Objects.requireNonNull(endsAt, "endsAt is required");
-        this.status = Objects.requireNonNull(status, "status is required");
+        this.agendaId = Objects.requireNonNull(agendaId, AppConstants.Messages.AGENDA_ID_REQUIRED);
+        this.openedAt = Objects.requireNonNull(openedAt, AppConstants.Messages.OPENED_AT_REQUIRED);
+        this.endsAt = Objects.requireNonNull(endsAt, AppConstants.Messages.ENDS_AT_REQUIRED);
+        this.status = Objects.requireNonNull(status, AppConstants.Messages.STATUS_REQUIRED);
 
         if (endsAt.isBefore(openedAt) || endsAt.equals(openedAt)) {
-            throw new IllegalArgumentException("endsAt must be after openedAt");
+            throw new IllegalArgumentException(AppConstants.Messages.ENDS_AT_AFTER_OPENED_AT);
         }
     }
 

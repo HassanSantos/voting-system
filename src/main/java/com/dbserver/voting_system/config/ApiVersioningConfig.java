@@ -1,5 +1,6 @@
 package com.dbserver.voting_system.config;
 
+import com.dbserver.voting_system.common.AppConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,11 +15,9 @@ import java.util.stream.Stream;
 @Configuration
 public class ApiVersioningConfig implements WebMvcConfigurer {
 
-    private static final String API_PREFIX = "/api/v1";
-
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
-        configurer.addPathPrefix(API_PREFIX, this::shouldApplyPrefix);
+        configurer.addPathPrefix(AppConstants.Api.API_PREFIX, this::shouldApplyPrefix);
     }
 
     private boolean shouldApplyPrefix(Class<?> controllerClass) {
@@ -34,6 +33,6 @@ public class ApiVersioningConfig implements WebMvcConfigurer {
         return Stream.concat(Arrays.stream(requestMapping.path()), Arrays.stream(requestMapping.value()))
                 .filter(Objects::nonNull)
                 .filter(path -> !path.isBlank())
-                .noneMatch(path -> path.startsWith("/api/"));
+                .noneMatch(path -> path.startsWith(AppConstants.Api.API_PATH_PREFIX));
     }
 }

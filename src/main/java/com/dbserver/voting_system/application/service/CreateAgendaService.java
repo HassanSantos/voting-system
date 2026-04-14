@@ -4,6 +4,7 @@ import com.dbserver.voting_system.application.dto.request.CreateAgendaCommand;
 import com.dbserver.voting_system.application.dto.response.AgendaResponse;
 import com.dbserver.voting_system.application.port.in.CreateAgendaUseCase;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.model.Agenda;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,7 +20,7 @@ public class CreateAgendaService implements CreateAgendaUseCase {
     @Override
     public AgendaResponse execute(CreateAgendaCommand command) {
         if (command.title() == null || command.title().isBlank()) {
-            throw new IllegalArgumentException("title is required");
+            throw new IllegalArgumentException(AppConstants.Messages.TITLE_REQUIRED);
         }
 
         Agenda agenda = new Agenda(

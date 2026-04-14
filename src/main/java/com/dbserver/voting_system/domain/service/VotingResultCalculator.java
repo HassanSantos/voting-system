@@ -1,5 +1,6 @@
 package com.dbserver.voting_system.domain.service;
 
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import com.dbserver.voting_system.domain.model.Vote;
 import com.dbserver.voting_system.domain.model.VotingResult;
@@ -14,11 +15,11 @@ public class VotingResultCalculator {
 
         String outcome;
         if (yesVotes > noVotes) {
-            outcome = "APPROVED";
+            outcome = AppConstants.Outcomes.APPROVED;
         } else if (noVotes > yesVotes) {
-            outcome = "REJECTED";
+            outcome = AppConstants.Outcomes.REJECTED;
         } else {
-            outcome = "TIED";
+            outcome = AppConstants.Outcomes.TIED;
         }
 
         return new VotingResult(agendaId, yesVotes, noVotes, totalVotes, outcome);

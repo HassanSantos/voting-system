@@ -6,6 +6,7 @@ import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.in.GetAllVotesUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/agendas")
+@RequestMapping(AppConstants.Routes.AGENDAS_BASE_PATH)
 @RequiredArgsConstructor
 public class VoteController {
 
@@ -27,7 +28,7 @@ public class VoteController {
     private final GetAllVotesUseCase getAllVotesUseCase;
     private final GetVotesByAgendaUseCase getVotesByAgendaUseCase;
 
-    @PostMapping("/{agendaId}/votes")
+    @PostMapping(AppConstants.Routes.AGENDA_VOTES_PATH)
     @ResponseStatus(HttpStatus.CREATED)
     public VoteResponse vote(@PathVariable String agendaId, @RequestBody RegisterVoteRequest request) {
         RegisterVoteCommand command = new RegisterVoteCommand(
@@ -39,12 +40,12 @@ public class VoteController {
         return registerVoteUseCase.execute(command);
     }
 
-    @GetMapping("/{agendaId}/votes")
+    @GetMapping(AppConstants.Routes.AGENDA_VOTES_PATH)
     public List<VoteResponse> listVotes(@PathVariable String agendaId) {
         return getVotesByAgendaUseCase.execute(agendaId);
     }
 
-    @GetMapping("/votes")
+    @GetMapping(AppConstants.Routes.VOTES_PATH)
     public List<VoteResponse> listAllVotes() {
         return getAllVotesUseCase.execute();
     }

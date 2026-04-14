@@ -1,84 +1,64 @@
 package com.dbserver.voting_system.adapters.out.dynamodb.repository;
 
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.ENTITY_TYPE;
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.PK;
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.SK;
 import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.VOTE_SK_PREFIX;
 
+import com.dbserver.voting_system.adapters.out.dynamodb.entity.DynamoSingleTableRecord;
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VoteItem;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VoteDynamoMapper;
+import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VoteSingleTableMapper;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.model.Vote;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
-import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
-import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 
 @Repository
 @RequiredArgsConstructor
 public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
 
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbTable<DynamoSingleTableRecord> votingSystemTable;
     private final VoteDynamoMapper voteDynamoMapper;
+    private final VoteSingleTableMapper voteSingleTableMapper;
 
     @Override
     public void save(Vote vote) {
         VoteItem item = voteDynamoMapper.toItem(vote);
-
-        Map<String, AttributeValue> attributes = new HashMap<>();
-        attributes.put(PK, AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(item.agendaId())).build());
-        attributes.put(SK, AttributeValue.builder().s(DynamoSingleTableKeys.voteSk(item.associateId())).build());
-        attributes.put(ENTITY_TYPE, AttributeValue.builder().s("VOTE").build());
-        attributes.put("agendaId", AttributeValue.builder().s(item.agendaId()).build());
-        attributes.put("associateId", AttributeValue.builder().s(item.associateId()).build());
-        attributes.put("voteValue", AttributeValue.builder().s(item.voteValue()).build());
-        attributes.put("votedAt", AttributeValue.builder().s(item.votedAt().toString()).build());
-        attributes.put("gsi1pk", AttributeValue.builder().s("ASSOCIATE#" + item.associateId()).build());
-        attributes.put("gsi1sk", AttributeValue.builder().s("AGENDA#" + item.agendaId() + "#" + item.votedAt()).build());
-
-        PutItemRequest request = PutItemRequest.builder()
-                .tableName(DynamoSingleTableKeys.TABLE_NAME)
-                .item(attributes)
-                .conditionExpression("attribute_not_exists(pk) AND attribute_not_exists(sk)")
-                .build();
-        dynamoDbClient.putItem(request);
+        votingSystemTable.putItem(voteSingleTableMapper.toRecord(item));
     }
 
     @Override
     public List<Vote> findAll() {
-        List<Map<String, AttributeValue>> rows = new ArrayList<>();
+        Expression filterExpression = Expression.builder()
+                .expression(AppConstants.Dynamo.FILTER_ENTITY_TYPE_EQUALS)
+                .putExpressionValue(
+                        AppConstants.Dynamo.EXPR_ENTITY_TYPE_KEY,
+                        software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder()
+                                .s(AppConstants.Dynamo.ENTITY_TYPE_VOTE)
+                                .build()
+                )
+                .build();
 
-        Map<String, AttributeValue> expressionValues = new HashMap<>();
-        expressionValues.put(":entityType", AttributeValue.builder().s("VOTE").build());
+        ScanEnhancedRequest scanRequest = ScanEnhancedRequest.builder()
+                .filterExpression(filterExpression)
+                .build();
 
-        ScanRequest.Builder requestBuilder = ScanRequest.builder()
-                .tableName(DynamoSingleTableKeys.TABLE_NAME)
-                .filterExpression("entityType = :entityType")
-                .expressionAttributeValues(expressionValues)
-                .consistentRead(true);
-
-        Map<String, AttributeValue> lastEvaluatedKey = null;
-
-        do {
-            ScanRequest request = requestBuilder.exclusiveStartKey(lastEvaluatedKey).build();
-            ScanResponse response = dynamoDbClient.scan(request);
-            rows.addAll(response.items());
-            lastEvaluatedKey = response.lastEvaluatedKey();
-        } while (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty());
+        List<DynamoSingleTableRecord> rows = new ArrayList<>();
+        votingSystemTable.scan(scanRequest).stream()
+                .map(Page::items)
+                .forEach(rows::addAll);
 
         return rows.stream()
-                .map(this::toVoteItem)
+                .map(voteSingleTableMapper::toItem)
                 .map(voteDynamoMapper::toDomain)
                 .sorted(Comparator.comparing(Vote::getVotedAt))
                 .toList();
@@ -86,51 +66,37 @@ public class DynamoVoteRepositoryAdapter implements VoteRepositoryPort {
 
     @Override
     public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
-        return DynamoGetItemHelper.existsByPrimaryKey(
-                dynamoDbClient,
-                DynamoSingleTableKeys.TABLE_NAME,
-                DynamoSingleTableKeys.agendaPk(agendaId),
-                DynamoSingleTableKeys.voteSk(associateId),
-                PK
+        DynamoSingleTableRecord record = votingSystemTable.getItem(
+                Key.builder()
+                        .partitionValue(DynamoSingleTableKeys.agendaPk(agendaId))
+                        .sortValue(DynamoSingleTableKeys.voteSk(associateId))
+                        .build()
         );
+        return record != null;
     }
 
     @Override
     public List<Vote> findByAgendaId(String agendaId) {
-        List<Map<String, AttributeValue>> rows = new ArrayList<>();
+        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
+                .queryConditional(
+                        QueryConditional.sortBeginsWith(
+                                Key.builder()
+                                        .partitionValue(DynamoSingleTableKeys.agendaPk(agendaId))
+                                        .sortValue(VOTE_SK_PREFIX)
+                                        .build()
+                        )
+                )
+                .build();
 
-        Map<String, AttributeValue> expressionValues = new HashMap<>();
-        expressionValues.put(":pk", AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(agendaId)).build());
-        expressionValues.put(":skPrefix", AttributeValue.builder().s(VOTE_SK_PREFIX).build());
-
-        QueryRequest.Builder requestBuilder = QueryRequest.builder()
-                .tableName(DynamoSingleTableKeys.TABLE_NAME)
-                .keyConditionExpression("pk = :pk AND begins_with(sk, :skPrefix)")
-                .expressionAttributeValues(expressionValues)
-                .consistentRead(true);
-
-        Map<String, AttributeValue> lastEvaluatedKey = null;
-
-        do {
-            QueryRequest request = requestBuilder.exclusiveStartKey(lastEvaluatedKey).build();
-            QueryResponse response = dynamoDbClient.query(request);
-            rows.addAll(response.items());
-            lastEvaluatedKey = response.lastEvaluatedKey();
-        } while (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty());
+        List<DynamoSingleTableRecord> rows = new ArrayList<>();
+        votingSystemTable.query(queryRequest).stream()
+                .map(Page::items)
+                .forEach(rows::addAll);
 
         return rows.stream()
-                .map(this::toVoteItem)
+                .map(voteSingleTableMapper::toItem)
                 .map(voteDynamoMapper::toDomain)
                 .sorted(Comparator.comparing(Vote::getVotedAt))
                 .toList();
-    }
-
-    private VoteItem toVoteItem(Map<String, AttributeValue> attributes) {
-        return new VoteItem(
-                attributes.get("agendaId").s(),
-                attributes.get("associateId").s(),
-                attributes.get("voteValue").s(),
-                Instant.parse(attributes.get("votedAt").s())
-        );
     }
 }

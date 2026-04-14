@@ -1,73 +1,48 @@
 package com.dbserver.voting_system.adapters.out.dynamodb.repository;
 
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.ENTITY_TYPE;
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.PK;
 import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.SESSION_SK;
-import static com.dbserver.voting_system.adapters.out.dynamodb.repository.DynamoSingleTableKeys.SK;
 
+import com.dbserver.voting_system.adapters.out.dynamodb.entity.DynamoSingleTableRecord;
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VotingSessionItem;
 import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VotingSessionDynamoMapper;
+import com.dbserver.voting_system.adapters.out.dynamodb.mapper.VotingSessionSingleTableMapper;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.domain.model.VotingSession;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 @Repository
 @RequiredArgsConstructor
 public class DynamoVotingSessionRepositoryAdapter implements VotingSessionRepositoryPort {
 
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbTable<DynamoSingleTableRecord> votingSystemTable;
     private final VotingSessionDynamoMapper votingSessionDynamoMapper;
+    private final VotingSessionSingleTableMapper votingSessionSingleTableMapper;
 
     @Override
     public VotingSession save(VotingSession votingSession) {
         VotingSessionItem item = votingSessionDynamoMapper.toItem(votingSession);
-
-        Map<String, AttributeValue> attributes = new HashMap<>();
-        attributes.put(PK, AttributeValue.builder().s(DynamoSingleTableKeys.agendaPk(item.agendaId())).build());
-        attributes.put(SK, AttributeValue.builder().s(SESSION_SK).build());
-        attributes.put(ENTITY_TYPE, AttributeValue.builder().s("VOTING_SESSION").build());
-        attributes.put("agendaId", AttributeValue.builder().s(item.agendaId()).build());
-        attributes.put("openedAt", AttributeValue.builder().s(item.openedAt().toString()).build());
-        attributes.put("endsAt", AttributeValue.builder().s(item.endsAt().toString()).build());
-        attributes.put("status", AttributeValue.builder().s(item.status()).build());
-
-        PutItemRequest request = PutItemRequest.builder()
-                .tableName(DynamoSingleTableKeys.TABLE_NAME)
-                .item(attributes)
-                .build();
-
-        dynamoDbClient.putItem(request);
+        votingSystemTable.putItem(votingSessionSingleTableMapper.toRecord(item));
         return votingSession;
     }
 
     @Override
     public Optional<VotingSession> findByAgendaId(String agendaId) {
-        Optional<Map<String, AttributeValue>> maybeItem = DynamoGetItemHelper.findByPrimaryKey(
-                dynamoDbClient,
-                DynamoSingleTableKeys.TABLE_NAME,
-                DynamoSingleTableKeys.agendaPk(agendaId),
-                SESSION_SK
+        DynamoSingleTableRecord record = votingSystemTable.getItem(
+                Key.builder()
+                        .partitionValue(DynamoSingleTableKeys.agendaPk(agendaId))
+                        .sortValue(SESSION_SK)
+                        .build()
         );
-        if (maybeItem.isEmpty()) {
+
+        if (record == null) {
             return Optional.empty();
         }
 
-        Map<String, AttributeValue> item = maybeItem.get();
-
-        VotingSessionItem sessionItem = new VotingSessionItem(
-                item.get("agendaId").s(),
-                Instant.parse(item.get("openedAt").s()),
-                Instant.parse(item.get("endsAt").s()),
-                item.get("status").s()
-        );
+        VotingSessionItem sessionItem = votingSessionSingleTableMapper.toItem(record);
 
         return Optional.of(votingSessionDynamoMapper.toDomain(sessionItem));
     }
