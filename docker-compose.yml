@@ -5,8 +5,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - LOCALSTACK_AUTH_TOKEN=ls-lureXAcE-RUlU-cegi-5564-3468XUsi1a20
-      - AWS_ENDPOINT=http://localstack:4566
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
       - SERVICES=dynamodb
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
