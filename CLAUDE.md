@@ -30,33 +30,83 @@ This project follows **Hexagonal Architecture**.
 ---
 
 ## Package Structure
-
 Use the following package organization:
-
-```text
-com.dbserver.voting_system
+voting-system/
+└── com.dbserver.voting_system
 ├── application
-│   ├── usecase
+│   ├── port
+│   │   ├── in
+│   │   │   ├── CreateAgendaUseCase.java
+│   │   │   ├── OpenVotingSessionUseCase.java
+│   │   │   ├── RegisterVoteUseCase.java
+│   │   │   ├── GetVotingResultUseCase.java
+│   │   │   └── GetVotesByAgendaUseCase.java
+│   │   └── out
+│   │       ├── AgendaRepositoryPort.java
+│   │       ├── VotingSessionRepositoryPort.java
+│   │       ├── VoteRepositoryPort.java
+│   │       └── VotingResultRepositoryPort.java
 │   ├── service
-│   └── port
-│       ├── in
-│       └── out
+│   │   ├── CreateAgendaService.java
+│   │   ├── OpenVotingSessionService.java
+│   │   ├── RegisterVoteService.java
+│   │   ├── GetVotingResultService.java
+│   │   └── GetVotesByAgendaService.java
+│   └── dto
+│       ├── request
+│       │   ├── CreateAgendaCommand.java
+│       │   ├── OpenVotingSessionCommand.java
+│       │   └── RegisterVoteCommand.java
+│       └── response
+│           ├── AgendaResponse.java
+│           ├── VotingSessionResponse.java
+│           ├── VoteResponse.java
+│           └── VotingResultResponse.java
+│
 ├── domain
 │   ├── model
+│   │   ├── Agenda.java
+│   │   ├── VotingSession.java
+│   │   ├── Vote.java
+│   │   └── VotingResult.java
+│   ├── enum
+│   │   ├── VoteValue.java
+│   │   └── VotingSessionStatus.java
 │   ├── exception
-│   └── rule
-├── infrastructure
-│   ├── config
-│   ├── persistence
-│   │   ├── entity
-│   │   ├── mapper
-│   │   ├── repository
-│   │   └── adapter
-│   ├── client
-│   ├── messaging
-│   └── storage
-└── entrypoint
-    └── rest
-        ├── controller
-        ├── dto
-        └── mapper
+│   │   ├── AgendaNotFoundException.java
+│   │   ├── VotingSessionClosedException.java
+│   │   ├── DuplicateVoteException.java
+│   │   └── VotingSessionNotFoundException.java
+│   └── service
+│       └── VotingResultCalculator.java
+│
+├── adapters
+│   ├── in
+│   │   └── web
+│   │       ├── AgendaController.java
+│   │       ├── VotingSessionController.java
+│   │       ├── VoteController.java
+│   │       └── VotingResultController.java
+│   │
+│   └── out
+│       └── dynamodb
+│           ├── entity
+│           │   ├── AgendaItem.java
+│           │   ├── VotingSessionItem.java
+│           │   ├── VoteItem.java
+│           │   └── VotingResultItem.java
+│           ├── repository
+│           │   ├── DynamoAgendaRepositoryAdapter.java
+│           │   ├── DynamoVotingSessionRepositoryAdapter.java
+│           │   ├── DynamoVoteRepositoryAdapter.java
+│           │   └── DynamoVotingResultRepositoryAdapter.java
+│           └── mapper
+│               ├── AgendaDynamoMapper.java
+│               ├── VotingSessionDynamoMapper.java
+│               ├── VoteDynamoMapper.java
+│               └── VotingResultDynamoMapper.java
+│
+└── config
+├── DynamoDbConfig.java
+├── BeanConfig.java
+└── GlobalExceptionHandler.java
