@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### LocalStack ###
+.localstack/
+
+### Codex local state ###
+.codex
+.codex/

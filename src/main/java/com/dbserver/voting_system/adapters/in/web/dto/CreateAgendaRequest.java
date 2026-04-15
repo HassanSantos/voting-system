@@ -1,4 +1,10 @@
 package com.dbserver.voting_system.adapters.in.web.dto;
 
-public record CreateAgendaRequest(String title, String description) {
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateAgendaRequest(
+        @NotBlank(message = "title is required")
+        String title,
+        String description
+) {
 }

@@ -1,103 +1,117 @@
 package com.dbserver.voting_system.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.dbserver.voting_system.application.dto.response.VotingResultResponse;
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
-import com.dbserver.voting_system.application.port.out.VotingResultRepositoryPort;
+import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.domain.enums.VoteValue;
+import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
+import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
+import com.dbserver.voting_system.domain.exception.VotingSessionResultUnavailableException;
 import com.dbserver.voting_system.domain.model.Agenda;
 import com.dbserver.voting_system.domain.model.Vote;
-import com.dbserver.voting_system.domain.model.VotingResult;
+import com.dbserver.voting_system.domain.model.VotingSession;
 import com.dbserver.voting_system.domain.service.VotingResultCalculator;
+import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class GetVotingResultServiceTest {
 
-    @org.junit.jupiter.api.Test
-    void shouldCalculateVotingResult() {
-        FakeAgendaRepository agendaRepository = new FakeAgendaRepository();
-        agendaRepository.save(new Agenda("agenda-1", "Pauta", "Descricao", Instant.now()));
+    private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
 
-        FakeVoteRepository voteRepository = new FakeVoteRepository();
-        voteRepository.save(new Vote("agenda-1", "associate-1", VoteValue.YES, Instant.now()));
-        voteRepository.save(new Vote("agenda-1", "associate-2", VoteValue.YES, Instant.now()));
-        voteRepository.save(new Vote("agenda-1", "associate-3", VoteValue.NO, Instant.now()));
+    @Mock
+    private AgendaRepositoryPort agendaRepositoryPort;
 
-        FakeVotingResultRepository resultRepository = new FakeVotingResultRepository();
+    @Mock
+    private VoteRepositoryPort voteRepositoryPort;
 
-        GetVotingResultService service = new GetVotingResultService(
-                agendaRepository,
-                voteRepository,
-                resultRepository,
-                new VotingResultCalculator()
+    @Mock
+    private VotingSessionRepositoryPort votingSessionRepositoryPort;
+
+    private GetVotingResultService service;
+
+    @BeforeEach
+    void setup_method_do() {
+        service = new GetVotingResultService(
+                agendaRepositoryPort,
+                voteRepositoryPort,
+                votingSessionRepositoryPort,
+                new VotingResultCalculator(),
+                new ApplicationResponseMapper(),
+                Clock.fixed(NOW, ZoneOffset.UTC)
         );
+    }
 
-        VotingResultResponse response = service.execute("agenda-1");
+    @Test
+    void shouldCalculateResultWithoutPersisting_method_execute_do() {
+        String agendaId = "agenda-1";
 
+        when(agendaRepositoryPort.findById(agendaId))
+                .thenReturn(Optional.of(new Agenda(agendaId, "Pauta", "Descricao", NOW.minusSeconds(60))));
+        when(votingSessionRepositoryPort.findByAgendaId(agendaId))
+                .thenReturn(Optional.of(new VotingSession(
+                        agendaId,
+                        NOW.minusSeconds(300),
+                        NOW.minusSeconds(1),
+                        VotingSessionStatus.OPEN
+                )));
+        when(voteRepositoryPort.findByAgendaId(agendaId)).thenReturn(List.of(
+                new Vote(agendaId, "associate-1", VoteValue.YES, NOW),
+                new Vote(agendaId, "associate-2", VoteValue.YES, NOW),
+                new Vote(agendaId, "associate-3", VoteValue.NO, NOW)
+        ));
+
+        VotingResultResponse response = service.execute(agendaId);
+
+        assertEquals(agendaId, response.agendaId());
         assertEquals(2, response.yesVotes());
         assertEquals(1, response.noVotes());
         assertEquals(3, response.totalVotes());
         assertEquals("APPROVED", response.outcome());
-        assertEquals(1, resultRepository.results.size());
+        verify(votingSessionRepositoryPort).findByAgendaId(agendaId);
     }
 
-    private static class FakeAgendaRepository implements AgendaRepositoryPort {
+    @Test
+    void shouldThrowAgendaNotFoundException_method_execute_do() {
+        when(agendaRepositoryPort.findById("agenda-1")).thenReturn(Optional.empty());
 
-        private final List<Agenda> agendas = new ArrayList<>();
+        assertThrows(AgendaNotFoundException.class, () -> service.execute("agenda-1"));
 
-        @Override
-        public Agenda save(Agenda agenda) {
-            agendas.removeIf(existing -> existing.getId().equals(agenda.getId()));
-            agendas.add(agenda);
-            return agenda;
-        }
-
-        @Override
-        public Optional<Agenda> findById(String id) {
-            return agendas.stream().filter(agenda -> agenda.getId().equals(id)).findFirst();
-        }
+        verify(voteRepositoryPort, never()).findByAgendaId(any());
+        verify(votingSessionRepositoryPort, never()).findByAgendaId(any());
     }
 
-    private static class FakeVoteRepository implements VoteRepositoryPort {
+    @Test
+    void shouldThrowVotingSessionResultUnavailableExceptionWhenSessionIsOpen_method_execute_do() {
+        when(agendaRepositoryPort.findById("agenda-1"))
+                .thenReturn(Optional.of(new Agenda("agenda-1", "Pauta", "Descricao", NOW.minusSeconds(60))));
+        when(votingSessionRepositoryPort.findByAgendaId("agenda-1"))
+                .thenReturn(Optional.of(new VotingSession(
+                        "agenda-1",
+                        NOW.minusSeconds(10),
+                        NOW.plusSeconds(60),
+                        VotingSessionStatus.OPEN
+                )));
 
-        private final List<Vote> votes = new ArrayList<>();
+        assertThrows(VotingSessionResultUnavailableException.class, () -> service.execute("agenda-1"));
 
-        @Override
-        public void save(Vote vote) {
-            votes.add(vote);
-        }
-
-        @Override
-        public boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId) {
-            return votes.stream().anyMatch(vote ->
-                    vote.getAgendaId().equals(agendaId) && vote.getAssociateId().equals(associateId)
-            );
-        }
-
-        @Override
-        public List<Vote> findByAgendaId(String agendaId) {
-            return votes.stream().filter(vote -> vote.getAgendaId().equals(agendaId)).toList();
-        }
-    }
-
-    private static class FakeVotingResultRepository implements VotingResultRepositoryPort {
-
-        private final List<VotingResult> results = new ArrayList<>();
-
-        @Override
-        public void save(VotingResult votingResult) {
-            results.removeIf(existing -> existing.getAgendaId().equals(votingResult.getAgendaId()));
-            results.add(votingResult);
-        }
-
-        @Override
-        public Optional<VotingResult> findByAgendaId(String agendaId) {
-            return results.stream().filter(result -> result.getAgendaId().equals(agendaId)).findFirst();
-        }
+        verify(voteRepositoryPort, never()).findByAgendaId(any());
     }
 }

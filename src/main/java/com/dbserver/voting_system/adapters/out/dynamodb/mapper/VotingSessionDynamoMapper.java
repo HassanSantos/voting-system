@@ -1,29 +1,14 @@
 package com.dbserver.voting_system.adapters.out.dynamodb.mapper;
 
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VotingSessionItem;
-import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.model.VotingSession;
+import org.mapstruct.Mapper;
 
-public final class VotingSessionDynamoMapper {
+@Mapper(componentModel = AppConstants.MapStruct.COMPONENT_MODEL_SPRING)
+public interface VotingSessionDynamoMapper {
 
-    private VotingSessionDynamoMapper() {
-    }
+    VotingSessionItem toItem(VotingSession votingSession);
 
-    public static VotingSessionItem toItem(VotingSession votingSession) {
-        return new VotingSessionItem(
-                votingSession.getAgendaId(),
-                votingSession.getOpenedAt(),
-                votingSession.getEndsAt(),
-                votingSession.getStatus().name()
-        );
-    }
-
-    public static VotingSession toDomain(VotingSessionItem item) {
-        return new VotingSession(
-                item.agendaId(),
-                item.openedAt(),
-                item.endsAt(),
-                VotingSessionStatus.valueOf(item.status())
-        );
-    }
+    VotingSession toDomain(VotingSessionItem item);
 }

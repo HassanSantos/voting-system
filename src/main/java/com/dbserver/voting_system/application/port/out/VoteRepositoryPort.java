@@ -5,9 +5,9 @@ import java.util.List;
 
 public interface VoteRepositoryPort {
 
-    void save(Vote vote);
+    Vote saveIfAbsent(Vote vote);
 
-    boolean existsByAgendaIdAndAssociateId(String agendaId, String associateId);
+    List<Vote> findAll();
 
     List<Vote> findByAgendaId(String agendaId);
 }

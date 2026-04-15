@@ -1,24 +1,14 @@
 package com.dbserver.voting_system.adapters.out.dynamodb.mapper;
 
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.VotingResultItem;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.model.VotingResult;
+import org.mapstruct.Mapper;
 
-public final class VotingResultDynamoMapper {
+@Mapper(componentModel = AppConstants.MapStruct.COMPONENT_MODEL_SPRING)
+public interface VotingResultDynamoMapper {
 
-    private VotingResultDynamoMapper() {
-    }
+    VotingResultItem toItem(VotingResult votingResult);
 
-    public static VotingResultItem toItem(VotingResult votingResult) {
-        return new VotingResultItem(
-                votingResult.getAgendaId(),
-                votingResult.getYesVotes(),
-                votingResult.getNoVotes(),
-                votingResult.getTotalVotes(),
-                votingResult.getOutcome()
-        );
-    }
-
-    public static VotingResult toDomain(VotingResultItem item) {
-        return new VotingResult(item.agendaId(), item.yesVotes(), item.noVotes(), item.totalVotes(), item.outcome());
-    }
+    VotingResult toDomain(VotingResultItem item);
 }

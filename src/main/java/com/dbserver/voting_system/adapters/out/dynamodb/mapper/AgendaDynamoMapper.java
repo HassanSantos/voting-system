@@ -1,18 +1,14 @@
 package com.dbserver.voting_system.adapters.out.dynamodb.mapper;
 
 import com.dbserver.voting_system.adapters.out.dynamodb.entity.AgendaItem;
+import com.dbserver.voting_system.common.AppConstants;
 import com.dbserver.voting_system.domain.model.Agenda;
+import org.mapstruct.Mapper;
 
-public final class AgendaDynamoMapper {
+@Mapper(componentModel = AppConstants.MapStruct.COMPONENT_MODEL_SPRING)
+public interface AgendaDynamoMapper {
 
-    private AgendaDynamoMapper() {
-    }
+    AgendaItem toItem(Agenda agenda);
 
-    public static AgendaItem toItem(Agenda agenda) {
-        return new AgendaItem(agenda.getId(), agenda.getTitle(), agenda.getDescription(), agenda.getCreatedAt());
-    }
-
-    public static Agenda toDomain(AgendaItem item) {
-        return new Agenda(item.id(), item.title(), item.description(), item.createdAt());
-    }
+    Agenda toDomain(AgendaItem item);
 }
