@@ -1,47 +1,46 @@
 package com.dbserver.voting_system.adapters.in.web;
 
 import com.dbserver.voting_system.adapters.in.web.dto.RegisterVoteRequest;
-import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
+import com.dbserver.voting_system.adapters.in.web.generated.api.VoteApi;
+import com.dbserver.voting_system.adapters.in.web.mapper.WebCommandMapper;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
+import com.dbserver.voting_system.application.port.in.GetAllVotesUseCase;
 import com.dbserver.voting_system.application.port.in.GetVotesByAgendaUseCase;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
-import com.dbserver.voting_system.domain.enums.VoteValue;
-import java.util.List;
+import com.dbserver.voting_system.common.AppConstants;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/agendas")
-public class VoteController {
+@RequestMapping(AppConstants.Routes.AGENDAS_BASE_PATH)
+@RequiredArgsConstructor
+public class VoteController implements VoteApi {
 
     private final RegisterVoteUseCase registerVoteUseCase;
+    private final GetAllVotesUseCase getAllVotesUseCase;
     private final GetVotesByAgendaUseCase getVotesByAgendaUseCase;
+    private final WebCommandMapper webCommandMapper;
 
-    public VoteController(RegisterVoteUseCase registerVoteUseCase, GetVotesByAgendaUseCase getVotesByAgendaUseCase) {
-        this.registerVoteUseCase = registerVoteUseCase;
-        this.getVotesByAgendaUseCase = getVotesByAgendaUseCase;
-    }
-
-    @PostMapping("/{agendaId}/votes")
+    @PostMapping(AppConstants.Routes.AGENDA_VOTES_PATH)
     @ResponseStatus(HttpStatus.CREATED)
-    public VoteResponse vote(@PathVariable String agendaId, @RequestBody RegisterVoteRequest request) {
-        RegisterVoteCommand command = new RegisterVoteCommand(
-                agendaId,
-                request.associateId(),
-                VoteValue.valueOf(request.vote().toUpperCase())
-        );
-
-        return registerVoteUseCase.execute(command);
+    @Override
+    public VoteResponse registerVote(@PathVariable String agendaId, @Valid @RequestBody RegisterVoteRequest request) {
+        return registerVoteUseCase.execute(webCommandMapper.toCommand(agendaId, request));
     }
 
-    @GetMapping("/{agendaId}/votes")
-    public List<VoteResponse> listVotes(@PathVariable String agendaId) {
+    @GetMapping(AppConstants.Routes.AGENDA_VOTES_PATH)
+    @Override
+    public List<VoteResponse> listVotesByAgenda(@PathVariable String agendaId) {
         return getVotesByAgendaUseCase.execute(agendaId);
+    }
+
+    @GetMapping(AppConstants.Routes.VOTES_PATH)
+    @Override
+    public List<VoteResponse> listAllVotes() {
+        return getAllVotesUseCase.execute();
     }
 }

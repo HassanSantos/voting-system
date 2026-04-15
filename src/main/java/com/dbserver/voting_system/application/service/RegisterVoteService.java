@@ -2,37 +2,34 @@ package com.dbserver.voting_system.application.service;
 
 import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
+import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
+import com.dbserver.voting_system.application.port.out.CpfEligibilityPort;
 import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
+import com.dbserver.voting_system.domain.enums.CpfEligibilityStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
-import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
+import com.dbserver.voting_system.domain.exception.UnableToVoteException;
 import com.dbserver.voting_system.domain.exception.VotingSessionClosedException;
 import com.dbserver.voting_system.domain.exception.VotingSessionNotFoundException;
 import com.dbserver.voting_system.domain.model.Vote;
 import com.dbserver.voting_system.domain.model.VotingSession;
 import java.time.Clock;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+@Service
+@RequiredArgsConstructor
 public class RegisterVoteService implements RegisterVoteUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VotingSessionRepositoryPort votingSessionRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
+    private final CpfEligibilityPort cpfEligibilityPort;
     private final Clock clock;
-
-    public RegisterVoteService(
-            AgendaRepositoryPort agendaRepositoryPort,
-            VotingSessionRepositoryPort votingSessionRepositoryPort,
-            VoteRepositoryPort voteRepositoryPort,
-            Clock clock
-    ) {
-        this.agendaRepositoryPort = agendaRepositoryPort;
-        this.votingSessionRepositoryPort = votingSessionRepositoryPort;
-        this.voteRepositoryPort = voteRepositoryPort;
-        this.clock = clock;
-    }
+    private final ApplicationResponseMapper responseMapper;
 
     @Override
     public VoteResponse execute(RegisterVoteCommand command) {
@@ -46,27 +43,18 @@ public class RegisterVoteService implements RegisterVoteUseCase {
             throw new VotingSessionClosedException(command.agendaId());
         }
 
-        boolean alreadyVoted = voteRepositoryPort
-                .existsByAgendaIdAndAssociateId(command.agendaId(), command.associateId());
-
-        if (alreadyVoted) {
-            throw new DuplicateVoteException(command.agendaId(), command.associateId());
+        CpfEligibilityStatus cpfEligibilityStatus = cpfEligibilityPort.verify(command.cpf());
+        if (cpfEligibilityStatus == CpfEligibilityStatus.UNABLE_TO_VOTE) {
+            throw new UnableToVoteException(command.cpf());
         }
 
         Vote vote = new Vote(
                 command.agendaId(),
-                command.associateId(),
+                command.cpf(),
                 command.voteValue(),
                 Instant.now(clock)
         );
 
-        voteRepositoryPort.save(vote);
-
-        return new VoteResponse(
-                vote.getAgendaId(),
-                vote.getAssociateId(),
-                vote.getValue().name(),
-                vote.getVotedAt()
-        );
+        return responseMapper.toVoteResponse(voteRepositoryPort.saveIfAbsent(vote));
     }
 }
