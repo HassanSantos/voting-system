@@ -2,24 +2,32 @@
 set -euo pipefail
 
 TABLE_NAME="voting-system"
+QUEUE_NAME="vote-system"
 
 if awslocal dynamodb describe-table --table-name "${TABLE_NAME}" >/dev/null 2>&1; then
   echo "DynamoDB table ${TABLE_NAME} already exists"
-  exit 0
+else
+  awslocal dynamodb create-table \
+    --table-name "${TABLE_NAME}" \
+    --attribute-definitions \
+      AttributeName=pk,AttributeType=S \
+      AttributeName=sk,AttributeType=S \
+      AttributeName=gsi1pk,AttributeType=S \
+      AttributeName=gsi1sk,AttributeType=S \
+    --key-schema \
+      AttributeName=pk,KeyType=HASH \
+      AttributeName=sk,KeyType=RANGE \
+    --global-secondary-indexes \
+      '[{"IndexName":"gsi1","KeySchema":[{"AttributeName":"gsi1pk","KeyType":"HASH"},{"AttributeName":"gsi1sk","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
+    --billing-mode PAY_PER_REQUEST
+
+  echo "DynamoDB table ${TABLE_NAME} created"
 fi
 
-awslocal dynamodb create-table \
-  --table-name "${TABLE_NAME}" \
-  --attribute-definitions \
-    AttributeName=pk,AttributeType=S \
-    AttributeName=sk,AttributeType=S \
-    AttributeName=gsi1pk,AttributeType=S \
-    AttributeName=gsi1sk,AttributeType=S \
-  --key-schema \
-    AttributeName=pk,KeyType=HASH \
-    AttributeName=sk,KeyType=RANGE \
-  --global-secondary-indexes \
-    '[{"IndexName":"gsi1","KeySchema":[{"AttributeName":"gsi1pk","KeyType":"HASH"},{"AttributeName":"gsi1sk","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
-  --billing-mode PAY_PER_REQUEST
+if awslocal sqs get-queue-url --queue-name "${QUEUE_NAME}" >/dev/null 2>&1; then
+  echo "SQS queue ${QUEUE_NAME} already exists"
+else
+  awslocal sqs create-queue --queue-name "${QUEUE_NAME}"
 
-echo "DynamoDB table ${TABLE_NAME} created"
+  echo "SQS queue ${QUEUE_NAME} created"
+fi
