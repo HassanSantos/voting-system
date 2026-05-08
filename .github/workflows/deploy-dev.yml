@@ -94,24 +94,24 @@ jobs:
 
       - name: Add server to known_hosts
         run: |
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST_TAILSCALE }} >> ~/.ssh/known_hosts
 
       - name: Create app directory on server
         run: |
           ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_TAILSCALE }} \
             "mkdir -p $APP_DIR"
 
       - name: Send docker-compose and env to server
         run: |
           scp -i ~/.ssh/deploy_key \
             docker-compose.yml .env \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_TAILSCALE }}:$APP_DIR/
 
       - name: Deploy application
         run: |
           ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_TAILSCALE }} << EOF
 
             cd $APP_DIR
 
