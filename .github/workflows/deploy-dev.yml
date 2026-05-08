@@ -1,0 +1,104 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  IMAGE_NAME: hassansena/voting-system
+  APP_DIR: /home/hss-admin/apps/voting-system
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Define image tag
+        id: vars
+        run: |
+          IMAGE_TAG=dev-${GITHUB_SHA::7}
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
+            -u "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $IMAGE_NAME:$IMAGE_TAG \
+            -t $IMAGE_NAME:dev-latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:$IMAGE_TAG
+          docker push $IMAGE_NAME:dev-latest
+
+      - name: Generate docker-compose.yml
+        run: |
+          cat > docker-compose.yml <<EOF
+          services:
+            voting-system:
+              image: ${IMAGE_NAME}:\${IMAGE_TAG}
+              container_name: voting-system
+              restart: unless-stopped
+              ports:
+                - "8080:8080"
+              environment:
+                SPRING_PROFILES_ACTIVE: dev
+          EOF
+
+      - name: Generate .env
+        run: |
+          cat > .env <<EOF
+          IMAGE_TAG=${IMAGE_TAG}
+          EOF
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-actions
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Send compose files to server
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p $APP_DIR"
+
+          scp -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            docker-compose.yml .env \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+              cd $APP_DIR
+              docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_TOKEN }}"
+              docker compose pull
+              docker compose up -d
+              docker image prune -f
+          EOF
