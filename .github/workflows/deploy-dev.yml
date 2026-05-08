@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 env:
   IMAGE_NAME: hassansena/voting-system
@@ -20,6 +19,18 @@ jobs:
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Grant execute permission for Maven Wrapper
+        run: chmod +x mvnw
+
+      - name: Build application
+        run: ./mvnw clean package -DskipTests
 
       - name: Define image tag
         id: vars
@@ -54,8 +65,10 @@ jobs:
               image: ${IMAGE_NAME}:\${IMAGE_TAG}
               container_name: voting-system
               restart: unless-stopped
+
               ports:
                 - "8080:8080"
+
               environment:
                 SPRING_PROFILES_ACTIVE: dev
           EOF
@@ -79,26 +92,37 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Send compose files to server
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create app directory on server
         run: |
           ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "mkdir -p $APP_DIR"
 
+      - name: Send docker-compose and env to server
+        run: |
           scp -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
             docker-compose.yml .env \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/
 
-      - name: Deploy on server
+      - name: Deploy application
         run: |
           ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-              cd $APP_DIR
-              docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_TOKEN }}"
-              docker compose pull
-              docker compose up -d
-              docker image prune -f
+
+            cd $APP_DIR
+
+            docker login \
+              -u "${{ secrets.DOCKERHUB_USERNAME }}" \
+              -p "${{ secrets.DOCKERHUB_TOKEN }}"
+
+            docker compose pull
+
+            docker compose up -d
+
+            docker image prune -f
+
           EOF
