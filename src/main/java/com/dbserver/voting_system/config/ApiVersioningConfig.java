@@ -19,7 +19,6 @@ public class ApiVersioningConfig implements WebMvcConfigurer {
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.addPathPrefix(AppConstants.Api.API_PREFIX, this::shouldApplyPrefix);
     }
-
     private boolean shouldApplyPrefix(Class<?> controllerClass) {
         if (!AnnotatedElementUtils.hasAnnotation(controllerClass, RestController.class)) {
             return false;
