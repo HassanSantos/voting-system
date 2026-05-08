@@ -8,140 +8,22 @@ on:
 permissions:
   contents: read
 
-env:
-  IMAGE_NAME: hassansena/voting-system
-  APP_DIR: /home/hss-admin/apps/voting-system
-
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout project
-        uses: actions/checkout@v4
-
-      - name: Set up Java 25
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Grant execute permission for Maven Wrapper
-        run: chmod +x mvnw
-
-      - name: Build application
-        run: ./mvnw clean package -DskipTests
-
-      - name: Define image tag
-        run: |
-          IMAGE_TAG=dev-${GITHUB_SHA::7}
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-
-      - name: Login to Docker Hub
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
-            -u "${{ secrets.DOCKERHUB_USERNAME }}" \
-            --password-stdin
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t $IMAGE_NAME:$IMAGE_TAG \
-            -t $IMAGE_NAME:dev-latest \
-            .
-
-      - name: Push Docker image
-        run: |
-          docker push $IMAGE_NAME:$IMAGE_TAG
-          docker push $IMAGE_NAME:dev-latest
-
-      - name: Generate docker-compose.yml
-        run: |
-          cat > docker-compose.yml <<EOF
-          services:
-            voting-system:
-              image: ${IMAGE_NAME}:\${IMAGE_TAG}
-              container_name: voting-system
-              restart: unless-stopped
-              ports:
-                - "8080:8080"
-              environment:
-                SPRING_PROFILES_ACTIVE: dev
-          EOF
-
-      - name: Generate .env
-        run: |
-          cat > .env <<EOF
-          IMAGE_TAG=${IMAGE_TAG}
-          EOF
-
-      - name: Connect to Tailscale
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:github-actions
-          ping: ${{ secrets.SSH_HOST }}
-
-      - name: Prepare SSH key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          if [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "::error::SSH_PRIVATE_KEY secret is empty or not configured"
-            exit 1
-          fi
-
-          install -m 700 -d ~/.ssh
-
-          if [[ "$SSH_PRIVATE_KEY" == *'\n'* ]]; then
-            printf '%b\n' "$SSH_PRIVATE_KEY"
-          else
-            printf '%s\n' "$SSH_PRIVATE_KEY"
-          fi | sed 's/\r$//' > ~/.ssh/deploy_key
-
-          chmod 600 ~/.ssh/deploy_key
-
-          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null; then
-            echo "::error::SSH_PRIVATE_KEY is not a valid SSH private key. Store the full private key, including BEGIN/END lines, as a multiline GitHub Actions secret."
-            exit 1
-          fi
-
-      - name: Add server to known_hosts
-        run: |
-          ssh-keyscan -T 10 -p 22 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "echo 'SSH connection OK'"
-
-      - name: Create app directory on server
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "mkdir -p $APP_DIR"
-
-      - name: Send docker-compose and env to server
-        run: |
-          scp -i ~/.ssh/deploy_key \
-            docker-compose.yml .env \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/
-
-      - name: Deploy application
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-              cd $APP_DIR
-
-              echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
-                -u "${{ secrets.DOCKERHUB_USERNAME }}" \
-                --password-stdin
-
-              docker compose pull
-              docker compose up -d
-              docker image prune -f
-          EOF
+  deploy-dev:
+    uses: HassanSantos/github-actions-templates/.github/workflows/deploy-dev.yml@main
+    with:
+      app-name: voting-system
+      image-name: hassansena/voting-system
+      app-dir: /home/hss-admin/apps/voting-system
+      java-version: '25'
+      host-port: '8080'
+      container-port: '8080'
+      spring-profile: dev
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
