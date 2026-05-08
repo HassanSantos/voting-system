@@ -12,13 +12,12 @@ import com.dbserver.voting_system.application.dto.request.RegisterVoteCommand;
 import com.dbserver.voting_system.application.dto.response.VoteResponse;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.CpfEligibilityPort;
-import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
+import com.dbserver.voting_system.application.port.out.VoteQueuePort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.domain.enums.CpfEligibilityStatus;
 import com.dbserver.voting_system.domain.enums.VoteValue;
 import com.dbserver.voting_system.domain.enums.VotingSessionStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
-import com.dbserver.voting_system.domain.exception.DuplicateVoteException;
 import com.dbserver.voting_system.domain.exception.InvalidCpfException;
 import com.dbserver.voting_system.domain.exception.UnableToVoteException;
 import com.dbserver.voting_system.domain.exception.VotingSessionClosedException;
@@ -47,7 +46,7 @@ class RegisterVoteServiceTest {
     private VotingSessionRepositoryPort votingSessionRepositoryPort;
 
     @Mock
-    private VoteRepositoryPort voteRepositoryPort;
+    private VoteQueuePort voteQueuePort;
 
     @Mock
     private CpfEligibilityPort cpfEligibilityPort;
@@ -59,7 +58,7 @@ class RegisterVoteServiceTest {
         service = new RegisterVoteService(
                 agendaRepositoryPort,
                 votingSessionRepositoryPort,
-                voteRepositoryPort,
+                voteQueuePort,
                 cpfEligibilityPort,
                 Clock.fixed(NOW, ZoneOffset.UTC),
                 new ApplicationResponseMapper()
@@ -80,15 +79,13 @@ class RegisterVoteServiceTest {
                 .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
         when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
         when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
-        when(voteRepositoryPort.saveIfAbsent(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
         VoteResponse response = service.execute(command);
 
         assertEquals("agenda-1", response.agendaId());
         assertEquals("12345678900", response.cpf());
         assertEquals("YES", response.voteValue());
         assertEquals(NOW, response.votedAt());
-        verify(voteRepositoryPort).saveIfAbsent(any());
+        verify(voteQueuePort).publish(any());
     }
 
     @Test
@@ -99,7 +96,7 @@ class RegisterVoteServiceTest {
         assertThrows(AgendaNotFoundException.class, () -> service.execute(command));
 
         verify(votingSessionRepositoryPort, never()).findByAgendaId(any());
-        verify(voteRepositoryPort, never()).saveIfAbsent(any());
+        verify(voteQueuePort, never()).publish(any());
     }
 
     @Test
@@ -111,7 +108,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(VotingSessionNotFoundException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).saveIfAbsent(any());
+        verify(voteQueuePort, never()).publish(any());
     }
 
     @Test
@@ -130,29 +127,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(VotingSessionClosedException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).saveIfAbsent(any());
-    }
-
-    @Test
-    void shouldThrowDuplicateVoteException_method_execute_do() {
-        RegisterVoteCommand command = new RegisterVoteCommand("agenda-1", "12345678900", VoteValue.YES);
-        VotingSession session = new VotingSession(
-                "agenda-1",
-                NOW.minusSeconds(30),
-                NOW.plusSeconds(300),
-                VotingSessionStatus.OPEN
-        );
-
-        when(agendaRepositoryPort.findById("agenda-1"))
-                .thenReturn(Optional.of(new Agenda("agenda-1", "Title", "Desc", NOW.minusSeconds(60))));
-        when(votingSessionRepositoryPort.findByAgendaId("agenda-1")).thenReturn(Optional.of(session));
-        when(cpfEligibilityPort.verify("12345678900")).thenReturn(CpfEligibilityStatus.ABLE_TO_VOTE);
-        when(voteRepositoryPort.saveIfAbsent(any()))
-                .thenThrow(new DuplicateVoteException("agenda-1", "12345678900"));
-
-        assertThrows(DuplicateVoteException.class, () -> service.execute(command));
-
-        verify(voteRepositoryPort).saveIfAbsent(any());
+        verify(voteQueuePort, never()).publish(any());
     }
 
     @Test
@@ -172,7 +147,7 @@ class RegisterVoteServiceTest {
 
         assertThrows(InvalidCpfException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).saveIfAbsent(any());
+        verify(voteQueuePort, never()).publish(any());
     }
 
     @Test
@@ -192,6 +167,6 @@ class RegisterVoteServiceTest {
 
         assertThrows(UnableToVoteException.class, () -> service.execute(command));
 
-        verify(voteRepositoryPort, never()).saveIfAbsent(any());
+        verify(voteQueuePort, never()).publish(any());
     }
 }

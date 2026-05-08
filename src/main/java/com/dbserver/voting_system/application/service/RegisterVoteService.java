@@ -6,7 +6,7 @@ import com.dbserver.voting_system.application.mapper.ApplicationResponseMapper;
 import com.dbserver.voting_system.application.port.in.RegisterVoteUseCase;
 import com.dbserver.voting_system.application.port.out.AgendaRepositoryPort;
 import com.dbserver.voting_system.application.port.out.CpfEligibilityPort;
-import com.dbserver.voting_system.application.port.out.VoteRepositoryPort;
+import com.dbserver.voting_system.application.port.out.VoteQueuePort;
 import com.dbserver.voting_system.application.port.out.VotingSessionRepositoryPort;
 import com.dbserver.voting_system.domain.enums.CpfEligibilityStatus;
 import com.dbserver.voting_system.domain.exception.AgendaNotFoundException;
@@ -26,7 +26,7 @@ public class RegisterVoteService implements RegisterVoteUseCase {
 
     private final AgendaRepositoryPort agendaRepositoryPort;
     private final VotingSessionRepositoryPort votingSessionRepositoryPort;
-    private final VoteRepositoryPort voteRepositoryPort;
+    private final VoteQueuePort voteQueuePort;
     private final CpfEligibilityPort cpfEligibilityPort;
     private final Clock clock;
     private final ApplicationResponseMapper responseMapper;
@@ -55,6 +55,8 @@ public class RegisterVoteService implements RegisterVoteUseCase {
                 Instant.now(clock)
         );
 
-        return responseMapper.toVoteResponse(voteRepositoryPort.saveIfAbsent(vote));
+        voteQueuePort.publish(vote);
+
+        return responseMapper.toVoteResponse(vote);
     }
 }

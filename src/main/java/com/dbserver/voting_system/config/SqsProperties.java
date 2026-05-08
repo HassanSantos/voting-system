@@ -1,14 +1,13 @@
 package com.dbserver.voting_system.config;
 
-import com.dbserver.voting_system.common.AppConstants;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class DynamoDbProperties {
+public class SqsProperties {
 
-    private String tableName = AppConstants.Dynamo.TABLE_NAME;
+    private String voteSystemQueueUrl;
     private String endpoint = "http://localhost:4566";
     private String region = "us-east-1";
     private String accessKeyId = "test";
