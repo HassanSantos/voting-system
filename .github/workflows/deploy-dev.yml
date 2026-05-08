@@ -87,10 +87,25 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::SSH_PRIVATE_KEY secret is empty or not configured"
+            exit 1
+          fi
+
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" | sed 's/\r$//' > ~/.ssh/deploy_key
+
+          if [[ "$SSH_PRIVATE_KEY" == *'\n'* ]]; then
+            printf '%b\n' "$SSH_PRIVATE_KEY"
+          else
+            printf '%s\n' "$SSH_PRIVATE_KEY"
+          fi | sed 's/\r$//' > ~/.ssh/deploy_key
+
           chmod 600 ~/.ssh/deploy_key
-          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
+
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null; then
+            echo "::error::SSH_PRIVATE_KEY is not a valid SSH private key. Store the full private key, including BEGIN/END lines, as a multiline GitHub Actions secret."
+            exit 1
+          fi
 
       - name: Add server to known_hosts
         run: |
